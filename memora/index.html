@@ -695,24 +695,50 @@
   </div>
 
   <div id="membership-modal" class="modal-overlay">
-    <div class="modal-content membership-card">
+    <div class="modal-content membership-card" id="membership-card">
       <button class="modal-close" onclick="closeMembershipModal()">×</button>
-      <h2>解锁完整 Memora</h2>
-      <ul class="membership-features">
-        <li>✅ 全部背诵模式（6种）</li>
-        <li>✅ 闯关模式无限挑战</li>
-        <li>✅ 好友对战 + 语音输入</li>
-        <li>✅ AI 助手无限对话</li>
-        <li>✅ 完整学习数据 + 导出</li>
-        <li>✅ 全部主题 + 自定义上传</li>
-      </ul>
-      <div class="membership-plans">
-        <div class="plan-card" data-plan="monthly"><span class="plan-name">月卡</span><span class="plan-price">¥19.9/月</span></div>
-        <div class="plan-card popular" data-plan="quarterly"><span class="plan-badge">最受欢迎</span><span class="plan-name">季卡</span><span class="plan-price">¥49.9/季</span></div>
-        <div class="plan-card" data-plan="yearly"><span class="plan-name">年卡</span><span class="plan-price">¥149.9/年</span></div>
+      <div class="membership-header">
+        <div class="membership-crown">👑</div>
+        <h2>解锁完整 Memora</h2>
+        <p class="membership-subtitle">开启你的高效记忆之旅</p>
       </div>
-      <button class="btn-primary" onclick="selectPlan()">立即开通</button>
-      <button class="btn-ghost" onclick="closeMembershipModal()">稍后再说</button>
+      <ul class="membership-features">
+        <li><span class="feature-check">✓</span> 全部背诵模式（6种）</li>
+        <li><span class="feature-check">✓</span> 闯关模式无限挑战</li>
+        <li><span class="feature-check">✓</span> 好友对战 + 语音输入</li>
+        <li><span class="feature-check">✓</span> AI 助手无限对话</li>
+        <li><span class="feature-check">✓</span> 完整学习数据 + 导出</li>
+        <li><span class="feature-check">✓</span> 全部主题 + 自定义上传</li>
+      </ul>
+      <div class="membership-plans" id="membership-plans">
+        <div class="plan-card" data-plan="monthly" onclick="selectPlan('monthly')"><span class="plan-name">月卡</span><span class="plan-price">¥19.9<span class="plan-period">/月</span></span></div>
+        <div class="plan-card popular selected" data-plan="quarterly" onclick="selectPlan('quarterly')"><span class="plan-badge">最受欢迎</span><span class="plan-name">季卡</span><span class="plan-price">¥49.9<span class="plan-period">/季</span></span><span class="plan-save">省¥9.8</span></div>
+        <div class="plan-card" data-plan="yearly" onclick="selectPlan('yearly')"><span class="plan-name">年卡</span><span class="plan-price">¥149.9<span class="plan-period">/年</span></span><span class="plan-save">省¥89.9</span></div>
+      </div>
+      <button class="btn-primary btn-full membership-cta" id="membership-cta" onclick="confirmPurchase()">
+        <span class="cta-text">立即开通</span>
+        <span class="cta-price" id="cta-price">¥49.9</span>
+      </button>
+      <button class="btn-ghost membership-cancel" onclick="closeMembershipModal()">稍后再说</button>
+      <p class="membership-terms">开通即表示同意《会员服务协议》· 支持微信支付</p>
+    </div>
+    <div class="modal-content membership-success" id="membership-success" style="display:none">
+      <div class="success-icon-wrap">
+        <div class="success-circle"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="success-particles">
+          <span class="particle p1"></span><span class="particle p2"></span><span class="particle p3"></span>
+          <span class="particle p4"></span><span class="particle p5"></span><span class="particle p6"></span>
+        </div>
+      </div>
+      <h2 class="success-title">会员开通成功！</h2>
+      <p class="success-plan" id="success-plan">季卡会员</p>
+      <p class="success-expire" id="success-expire">有效期至 2026年8月27日</p>
+      <div class="success-features">
+        <div class="success-feature"><span class="sf-icon">🔓</span><span>全部模式已解锁</span></div>
+        <div class="success-feature"><span class="sf-icon">♾️</span><span>闯关无限次</span></div>
+        <div class="success-feature"><span class="sf-icon">🤖</span><span>AI 助手无限对话</span></div>
+      </div>
+      <button class="btn-primary btn-full" onclick="closeMembershipModal()">开始使用</button>
     </div>
   </div>
 

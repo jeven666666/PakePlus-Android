@@ -1,7 +1,19 @@
 const pageHistory = [];
 let currentPage = 'page-home';
 
+const memberOnlyPages = [
+  'page-challenge-hall', 'page-challenge-detail', 'page-challenge-fill',
+  'page-challenge-recite', 'page-challenge-blind', 'page-challenge-reorder',
+  'page-challenge-result', 'page-challenge-rank',
+  'page-battle', 'page-battle-invite', 'page-battle-arena', 'page-battle-result',
+  'page-voice'
+];
+
 function navigateTo(pageId, params) {
+  if (!state.user.isMember && memberOnlyPages.includes(pageId)) {
+    showMembershipModal();
+    return;
+  }
   const currentEl = document.getElementById(currentPage);
   if (currentEl) currentEl.classList.remove('active');
   const targetEl = document.getElementById(pageId);
@@ -328,26 +340,94 @@ function showFloatingText(text) {
 }
 
 function showMembershipModal() {
+  const card = document.getElementById('membership-card');
+  const success = document.getElementById('membership-success');
+  if (card) card.style.display = '';
+  if (success) success.style.display = 'none';
   document.getElementById('membership-modal').classList.add('active');
   selectPlan(state.selectedPlan);
+  updateMembershipUI();
 }
 
 function closeMembershipModal() {
   document.getElementById('membership-modal').classList.remove('active');
 }
 
+const planConfig = {
+  monthly: { name: '月卡会员', price: '¥19.9', months: 1 },
+  quarterly: { name: '季卡会员', price: '¥49.9', months: 3 },
+  yearly: { name: '年卡会员', price: '¥149.9', months: 12 }
+};
+
 function selectPlan(plan) {
   state.selectedPlan = plan || state.selectedPlan;
   document.querySelectorAll('.plan-card').forEach(card => {
     card.classList.toggle('selected', card.dataset.plan === state.selectedPlan);
   });
+  const ctaPrice = document.getElementById('cta-price');
+  if (ctaPrice) ctaPrice.textContent = planConfig[state.selectedPlan].price;
 }
 
 function confirmPurchase() {
-  state.user.isMember = true;
-  state.user.membership.plan = state.selectedPlan;
-  closeMembershipModal();
-  showToast('会员开通成功！');
+  if (state.user.isMember) {
+    showToast('你已经是会员啦！');
+    closeMembershipModal();
+    return;
+  }
+  const ctaBtn = document.getElementById('membership-cta');
+  if (ctaBtn) {
+    ctaBtn.disabled = true;
+    ctaBtn.innerHTML = '<span class="cta-text">支付中</span><span class="cta-loading"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>';
+  }
+  setTimeout(() => {
+    state.user.isMember = true;
+    state.user.membership.plan = state.selectedPlan;
+    const now = new Date();
+    state.user.membership.startDate = now.toISOString().split('T')[0];
+    const expire = new Date(now);
+    expire.setMonth(expire.getMonth() + planConfig[state.selectedPlan].months);
+    state.user.membership.endDate = expire.toISOString().split('T')[0];
+    state.user.dailyQuota = { recite: -1, quiz: -1, aiChat: -1, challenge: -1 };
+    showPurchaseSuccess();
+    updateMembershipUI();
+  }, 1800);
+}
+
+function showPurchaseSuccess() {
+  const card = document.getElementById('membership-card');
+  const success = document.getElementById('membership-success');
+  if (card) card.style.display = 'none';
+  if (success) {
+    success.style.display = '';
+    const planName = document.getElementById('success-plan');
+    const planExpire = document.getElementById('success-expire');
+    if (planName) planName.textContent = planConfig[state.selectedPlan].name;
+    if (planExpire) {
+      const d = new Date(state.user.membership.endDate);
+      planExpire.textContent = '有效期至 ' + d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    }
+  }
+}
+
+function updateMembershipUI() {
+  document.querySelectorAll('.membership-badge').forEach(badge => {
+    if (state.user.isMember) {
+      badge.textContent = '会员';
+      badge.className = 'membership-badge vip';
+    } else {
+      badge.textContent = '免费版';
+      badge.className = 'membership-badge free';
+    }
+  });
+  document.querySelectorAll('.vip-tag').forEach(tag => {
+    if (state.user.isMember) tag.style.display = 'none';
+  });
+  document.querySelectorAll('.theme-card.locked').forEach(card => {
+    if (state.user.isMember) {
+      card.classList.remove('locked');
+      card.classList.add('unlocked');
+    }
+  });
 }
 
 function showBottomSheet(content) {
@@ -1359,12 +1439,19 @@ function wechatLogin() {
 document.addEventListener('DOMContentLoaded', () => {
   updateExamCountdown();
   setInterval(updateExamCountdown, 86400000);
+  updateMembershipUI();
   const style = document.createElement('style');
   style.textContent = `
     @keyframes floatUp {
       0% { opacity: 1; transform: translate(-50%, -50%); }
       100% { opacity: 0; transform: translate(-50%, -150%); }
     }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .cta-loading { display: inline-flex; align-items: center; }
+    .cta-loading svg { animation: spin 1s linear infinite; }
     .toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 20px; font-size: 14px; z-index: 10000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast-success { background: rgba(16,185,129,0.9); color: white; }
     .toast-error { background: rgba(239,68,68,0.9); color: white; }
