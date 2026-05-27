@@ -13,7 +13,17 @@
       <section class="page active" id="page-home">
         <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
         <div class="page-content splash-content">
-          <div class="splash-logo"><h1 class="splash-title">Memora</h1><p class="splash-tagline">考研背诵教练</p></div>
+          <div class="splash-logo">
+  <div class="brand-mark">
+    <svg width="80" height="80" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 60C10 55 5 40 15 25C22 12 35 8 45 18C42 30 38 48 28 58C26 62 24 66 20 60Z" fill="#7C3AED"/>
+      <path d="M50 65C40 60 35 45 45 30C52 17 65 13 75 23C72 35 68 53 58 63C56 67 54 71 50 65Z" fill="#8B5CF6"/>
+      <path d="M80 60C70 55 65 40 75 25C82 12 95 8 95 18C92 30 88 48 78 58C76 62 74 66 80 60Z" fill="#A78BFA"/>
+    </svg>
+  </div>
+  <h1 class="splash-title">Memora</h1>
+  <p class="splash-tagline">让记忆更有力量</p>
+</div>
           <div class="splash-countdown"><span class="countdown-label">距考研</span><span class="countdown-number">213</span><span class="countdown-unit">天</span></div>
           <div class="splash-actions"><button class="btn-secondary" onclick="navigateTo('page-books')">免费试用</button><button class="btn-primary" onclick="showMembershipModal()">开通会员</button></div>
           <p class="splash-footer">已服务 10,000+ 考研学子</p>
@@ -38,51 +48,236 @@
 
       <section class="page" id="page-onboarding">
         <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
-        <div class="nav-bar"><button class="nav-back" onclick="goBack()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="nav-title">新手引导</span><div class="nav-actions"></div></div>
+        <div class="nav-bar"><button class="nav-back" onclick="goBack()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="nav-title">完善学习档案</span><div class="nav-actions"><span class="onb-step" id="onb-step-num">1/4</span></div></div>
         <div class="page-content onboarding-content">
-          <div class="onboarding-carousel" id="onboarding-carousel">
-            <div class="onboarding-step active" data-step="0"><div class="onboarding-icon"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 1 0 14 7 7 0 0 1 0-14"/><path d="M12 2v20"/><path d="M2 12h20"/></svg></div><h3>结构化记忆</h3><p>将知识点拆解为树状结构，层层递进，建立完整知识体系</p></div>
-            <div class="onboarding-step" data-step="1"><div class="onboarding-icon"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="1.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div><h3>闯关挑战</h3><p>多种题型闯关模式，填空、背诵、盲记、排序，让背诵不再枯燥</p></div>
-            <div class="onboarding-step" data-step="2"><div class="onboarding-icon"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="1.5"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>AI 智能评分</h3><p>AI 多维度评分，精准定位薄弱环节，个性化复习建议</p></div>
+          <div class="onb-progress"><div class="onb-progress-bar" id="onb-progress-bar"></div></div>
+
+          <div class="onb-step active" id="onb-step-1">
+            <h3>你现在的身份是？</h3>
+            <p class="onb-subtitle">选择最符合你当前的状态</p>
+            <div class="identity-grid">
+              <div class="identity-card" onclick="selectIdentity(this,'考研党')">
+                <div class="identity-icon">📚</div><span>考研党</span><span class="identity-desc">正在备战研究生</span>
+              </div>
+              <div class="identity-card" onclick="selectIdentity(this,'考公党')">
+                <div class="identity-icon">🏛️</div><span>考公党</span><span class="identity-desc">准备公务员考试</span>
+              </div>
+              <div class="identity-card" onclick="selectIdentity(this,'考证党')">
+                <div class="identity-icon">📋</div><span>考证党</span><span class="identity-desc">职业资格认证</span>
+              </div>
+              <div class="identity-card" onclick="selectIdentity(this,'学生党')">
+                <div class="identity-icon">🎓</div><span>学生党</span><span class="identity-desc">日常课程背诵</span>
+              </div>
+            </div>
           </div>
-          <div class="onboarding-dots"><span class="dot active" data-step="0"></span><span class="dot" data-step="1"></span><span class="dot" data-step="2"></span></div>
-          <div class="onboarding-actions"><button class="btn-ghost" onclick="skipOnboarding()">跳过</button><button class="btn-primary" id="onboarding-next" onclick="nextOnboardingStep()">下一步</button></div>
+
+          <div class="onb-step" id="onb-step-2">
+            <h3>你的学习目标是？</h3>
+            <p class="onb-subtitle">我们帮你定制专属方案</p>
+            <div class="goal-list">
+              <div class="goal-item" onclick="selectGoal(this,'pass')">
+                <span class="goal-icon">🎯</span>
+                <div class="goal-info"><strong>通过考试</strong><span>以应试拿分为目标</span></div>
+              </div>
+              <div class="goal-item" onclick="selectGoal(this,'master')">
+                <span class="goal-icon">🧠</span>
+                <div class="goal-info"><strong>深度掌握</strong><span>真正理解并记住知识</span></div>
+              </div>
+              <div class="goal-item" onclick="selectGoal(this,'speed')">
+                <span class="goal-icon">⚡</span>
+                <div class="goal-info"><strong>快速记忆</strong><span>短时间内大量记忆</span></div>
+              </div>
+              <div class="goal-item" onclick="selectGoal(this,'review')">
+                <span class="goal-icon">🔄</span>
+                <div class="goal-info"><strong>巩固复习</strong><span>防止遗忘，长期保持</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="onb-step" id="onb-step-3">
+            <h3>你希望通过的考试是？</h3>
+            <p class="onb-subtitle">选择目标，我们推荐最适合的知识库</p>
+            <div class="exam-chips">
+              <span class="exam-chip" onclick="selectExam(this,'设计史论')">设计史论</span>
+              <span class="exam-chip" onclick="selectExam(this,'艺术概论')">艺术概论</span>
+              <span class="exam-chip" onclick="selectExam(this,'中国美术')">中国美术史</span>
+              <span class="exam-chip" onclick="selectExam(this,'英语政治')">英语/政治</span>
+              <span class="exam-chip" onclick="selectExam(this,'法硕')">法律硕士</span>
+              <span class="exam-chip" onclick="selectExam(this,'教育学')">教育学</span>
+              <span class="exam-chip" onclick="selectExam(this,'其他')">其他考试</span>
+            </div>
+          </div>
+
+          <div class="onb-step" id="onb-step-4">
+            <h3>你是从哪里知道 Memora 的？</h3>
+            <p class="onb-subtitle">选择来源（选填）</p>
+            <div class="source-grid">
+              <div class="source-item" onclick="selectSource(this)">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#07C160"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05a6.082 6.082 0 01-.281-1.816c0-3.556 3.39-6.441 7.573-6.441.236 0 .464.021.695.04C16.794 4.308 13.084 2.188 8.691 2.188zm-2.6 4.17a1.115 1.115 0 110 2.23 1.115 1.115 0 010-2.23zm5.2 0a1.115 1.115 0 110 2.23 1.115 1.115 0 010-2.23z"/></svg>
+                <span>微信</span>
+              </div>
+              <div class="source-item" onclick="selectSource(this)">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#FF2442"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10 4.48 10 10S22 17.52 22 12 17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                <span>小红书</span>
+              </div>
+              <div class="source-item" onclick="selectSource(this)">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#FF6A00"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="11" font-weight="bold">知</text></svg>
+                <span>知乎</span>
+              </div>
+              <div class="source-item" onclick="selectSource(this)">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#E6162D"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5z"/></svg>
+                <span>B站</span>
+              </div>
+              <div class="source-item" onclick="selectSource(this)">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#333"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9l6 6m0-6l-6 6" stroke="white" stroke-width="2"/></svg>
+                <span>朋友推荐</span>
+              </div>
+            </div>
+
+            <div class="memory-test-intro" id="memory-test-intro" style="display:none;margin-top:24px;padding-top:20px;border-top:1px solid #f0f0f0">
+              <h3 style="margin-bottom:8px">✨ 记忆力小测试</h3>
+              <p style="font-size:13px;color:#6b7280;margin-bottom:16px">花30秒测一下你的瞬时记忆力</p>
+              <button class="btn-primary btn-full" onclick="startMemoryTest()">开始测试</button>
+            </div>
+
+            <div class="memory-test-area" id="memory-test-area" style="display:none">
+              <div class="test-phase" id="test-memorize" style="display:block;text-align:center">
+                <p class="test-instruction">记住以下数字序列（10秒后消失）</p>
+                <div class="test-sequence" id="test-sequence" style="font-size:36px;font-weight:800;letter-spacing:8px;color:#7C3AED; padding:24px;background:#f5f3ff;border-radius:14px;">3 7 1 9 4</div>
+                <p class="test-timer" id="test-timer" style="font-size:20px;font-weight:700;color:#ef4444;margin-top:12px">10</p>
+              </div>
+              <div class="test-phase" id="test-input" style="display:none">
+                <p class="test-instruction">请输入你记住的数字</p>
+                <input type="text" class="quiz-fill-input" id="memory-answer" maxlength="10" placeholder="例：37194" style="text-align:center;font-size:24px;letter-spacing:4px;">
+                <button class="btn-primary btn-full" onclick="submitMemoryTest()" style="margin-top:16px">提交答案</button>
+              </div>
+              <div class="test-phase" id="test-result" style="display:none">
+                <div class="score-circle" id="mem-test-score-circle">
+                  <span class="score-num" id="mem-test-score">85</span>
+                  <span class="score-unit">分</span>
+                </div>
+                <p id="mem-test-feedback" style="font-size:14px;color:#6b7280;text-align:center;line-height:1.6"></p>
+                <button class="btn-primary btn-full" onclick="finishOnboarding()" style="margin-top:16px">完成设置</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="onb-actions">
+            <button class="btn-ghost" id="onb-skip-btn" onclick="skipOnboarding()">跳过</button>
+            <button class="btn-primary" id="onb-next-btn" onclick="nextOnbStep()">下一步</button>
+          </div>
         </div>
       </section>
 
       <section class="page" id="page-books">
         <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
         <div class="nav-bar"><button class="nav-back" style="visibility:hidden"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="nav-title">Memora</span><div class="nav-actions"><button class="nav-icon-btn" onclick="showMembershipModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button></div></div>
-        <div class="page-content">
-          <div class="countdown-card" onclick="navigateTo('page-data')"><div class="countdown-bg"></div><span class="countdown-label">距考研</span><span class="countdown-number">213</span><span class="countdown-unit">天</span><span class="countdown-date">2026年12月</span></div>
-          <div class="section-header"><h3>今日任务</h3><span class="section-more" onclick="navigateTo('page-review')">查看全部</span></div>
-          <div class="task-cards">
-            <div class="task-card" onclick="navigateTo('page-recall')"><div class="task-icon purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div><div class="task-info"><span class="task-title">背诵 5 个知识点</span><span class="task-progress">2/5 已完成</span></div></div>
-            <div class="task-card" onclick="navigateTo('page-quiz-choice')"><div class="task-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="task-info"><span class="task-title">完成 1 次检测</span><span class="task-progress">未完成</span></div></div>
-            <div class="task-card" onclick="navigateTo('page-challenge-hall')"><div class="task-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div><div class="task-info"><span class="task-title">闯关 3 关</span><span class="task-progress">1/3 已完成</span></div></div>
+        <div class="page-content ai-home">
+          <div class="ai-header">
+            <div class="ai-avatar-wrap">
+              <div class="ai-avatar">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/><path d="M15 8a3 3 0 1 0-6 0 3 3 0 0 1 6 0"/><circle cx="18" cy="5" r="2" fill="#FBBF24"/></svg>
+              </div>
+              <div class="ai-status-dot"></div>
+            </div>
+            <div class="ai-greeting">
+              <p class="ai-name">Memora AI 助教</p>
+              <p class="ai-msg" id="ai-greeting-msg">Gale同学，今天状态不错！已连续打卡 23 天 🔥</p>
+            </div>
+            <div class="ai-header-actions">
+              <button class="ai-mini-chat" onclick="navigateTo('page-ai')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
           </div>
-          <div class="section-header"><h3>快捷入口</h3></div>
-          <div class="quick-grid">
-            <div class="quick-item" onclick="navigateTo('page-structure')"><div class="quick-icon purple"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span>结构拆解</span></div>
-            <div class="quick-item" onclick="navigateTo('page-recall')"><div class="quick-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div><span>遮挡回忆</span></div>
-            <div class="quick-item" onclick="navigateTo('page-keyword')"><div class="quick-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></div><span>关键词联想</span></div>
-            <div class="quick-item" onclick="navigateTo('page-reverse')"><div class="quick-icon orange"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div><span>逆向背诵</span></div>
-            <div class="quick-item" onclick="navigateTo('page-challenge-hall')"><div class="quick-icon red"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><span>闯关模式</span></div>
-            <div class="quick-item" onclick="navigateTo('page-scene')"><div class="quick-icon pink"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5a5 5 0 0 1 5-5z"/><path d="M12 12v10"/><path d="M8 18l4-4 4 4"/></svg></div><span>AI场景</span></div>
+
+          <div class="core-cards">
+            <div class="core-card main-action" onclick="navigateTo('page-recall')">
+              <div class="core-icon-wrap purple">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3C7 4 7 7 7 7"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+              </div>
+              <div class="core-info"><span class="core-title">开始背诵</span><span class="core-desc">遮挡回忆 · 关键词联想</span></div>
+              <svg class="core-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+
+            <div class="core-card" onclick="navigateTo('page-review')">
+              <div class="core-icon-wrap blue">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="core-info"><span class="core-title">记忆强化</span><span class="core-desc">多路径智能复习</span></div>
+              <svg class="core-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+
+            <div class="core-card" onclick="navigateTo('page-data')">
+              <div class="core-icon-wrap green">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+              <div class="core-info"><span class="core-title">学习分析</span><span class="core-desc">数据可视化报告</span></div>
+              <svg class="core-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+
+            <div class="core-card" onclick="navigateTo('page-review')">
+              <div class="core-icon-wrap orange">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div class="core-info"><span class="core-title">今日复习</span><span class="core-desc">待复习 12 个知识点</span></div>
+              <svg class="core-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
           </div>
-          <div class="study-stats-card"><div class="stat-item"><span class="stat-value">45分钟</span><span class="stat-label">今日学习</span></div><div class="stat-divider"></div><div class="stat-item"><span class="stat-value">89%</span><span class="stat-label">正确率</span></div><div class="stat-divider"></div><div class="stat-item"><span class="stat-value">23天</span><span class="stat-label">连续打卡</span></div></div>
-          <div class="section-header"><h3>最近活动</h3></div>
-          <div class="activity-list">
-            <div class="activity-item"><span class="activity-time">今天 14:30</span><span class="activity-text">完成了「艺术本质论」遮挡回忆</span></div>
-            <div class="activity-item"><span class="activity-time">今天 10:15</span><span class="activity-text">闯关通过「设计史·第3关」</span></div>
-            <div class="activity-item"><span class="activity-time">昨天 21:00</span><span class="activity-text">背诵了 8 个知识点</span></div>
+
+          <div class="ai-chat-preview" onclick="navigateTo('page-ai')">
+            <div class="ai-chat-header">
+              <div class="ai-chat-avatar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>
+              </div>
+              <span class="ai-chat-title">AI 对话</span>
+              <span class="ai-chat-badge">随时提问</span>
+              <svg class="ai-chat-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7"/></svg>
+            </div>
+            <div class="ai-chat-bubbles">
+              <div class="chat-bubble ai-bubble">今天想背什么？我帮你推荐 📚</div>
+            </div>
+          </div>
+
+          <div class="today-suggestions">
+            <div class="suggestions-header" onclick="toggleSuggestions()">
+              <span class="suggestions-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.47.47M21 12h-1M17.66 7.34l-.47-.47M12 21h.01M7.057 7.34l-.471.47M3.343 12h-.008"/></svg>
+                今日建议
+              </span>
+              <span class="suggestions-expand-icon" id="suggest-toggle">展开</span>
+            </div>
+            <div class="suggestions-body" id="suggestions-body" style="display:none">
+              <div class="suggestion-card" onclick="navigateTo('page-structure')">
+                <div class="sc-tag">逻辑梳理</div>
+                <h4>「艺术本质论」结构拆解</h4>
+                <p>这个知识点有 3 层嵌套结构，建议先从框架入手再填充细节</p>
+                <span class="sc-action">开始 →</span>
+              </div>
+              <div class="suggestion-card" onclick="navigateTo('page-recall')">
+                <div class="sc-tag yellow">薄弱点</div>
+                <h4>「工艺美术运动」需要巩固</h4>
+                <p>HP 仅剩 30，已经 3 天未复习了，建议立即回顾</p>
+                <span class="sc-action">去复习 →</span>
+              </div>
+              <div class="suggestion-card" onclick="navigateTo('page-scene')">
+                <div class="sc-tag pink">场景记忆</div>
+                <h4>「上层建筑」比喻记忆</h4>
+                <p>试试用「盖房子」的比喻来记，上层建筑 = 房子的屋顶</p>
+                <span class="sc-action">查看 →</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="tab-bar">
           <div class="tab-item active" data-tab="0" onclick="switchTab(0)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></div>
           <div class="tab-item" data-tab="1" onclick="switchTab(1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>背书库</span></div>
-          <div class="tab-item" data-tab="2" onclick="switchTab(2)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
-          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+          <div class="tab-item tab-center" data-tab="2" onclick="switchTab(2)">
+            <div class="ai-center-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10 5z"/><circle cx="12" cy="12" r="3"/><path d="M12 16v4M8 21h8"/></svg></div>
+            <span>AI伴学</span>
+          </div>
+          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
+          <div class="tab-item" data-tab="4" onclick="switchTab(4)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
         </div>
       </section>
 
@@ -102,28 +297,213 @@
         <div class="tab-bar">
           <div class="tab-item" data-tab="0" onclick="switchTab(0)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></div>
           <div class="tab-item active" data-tab="1" onclick="switchTab(1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>背书库</span></div>
-          <div class="tab-item" data-tab="2" onclick="switchTab(2)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
-          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+          <div class="tab-item tab-center" data-tab="2" onclick="switchTab(2)">
+            <div class="ai-center-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10 5z"/><circle cx="12" cy="12" r="3"/><path d="M12 16v4M8 21h8"/></svg></div>
+            <span>AI伴学</span>
+          </div>
+          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
+          <div class="tab-item" data-tab="4" onclick="switchTab(4)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
         </div>
       </section>
 
       <section class="page" id="page-data">
         <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
         <div class="nav-bar"><button class="nav-back" style="visibility:hidden"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="nav-title">学习数据</span><div class="nav-actions"></div></div>
-        <div class="page-content">
-          <div class="period-tabs"><span class="period-tab active" onclick="switchPeriod('week')">本周</span><span class="period-tab" onclick="switchPeriod('month')">本月</span><span class="period-tab" onclick="switchPeriod('total')">总计</span></div>
-          <div class="stats-grid"><div class="stat-card"><span class="stat-value">127h</span><span class="stat-label">总学习时长</span></div><div class="stat-card"><span class="stat-value">89%</span><span class="stat-label">正确率</span></div><div class="stat-card"><span class="stat-value">156/200</span><span class="stat-label">知识点掌握</span></div><div class="stat-card"><span class="stat-value">23天</span><span class="stat-label">连续打卡</span></div></div>
-          <div class="chart-card"><h4>学习趋势</h4><div class="chart-area" id="trend-chart"><svg viewBox="0 0 300 120" class="line-chart"><defs><linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7C5CFC" stop-opacity="0.3"/><stop offset="100%" stop-color="#7C5CFC" stop-opacity="0"/></linearGradient></defs><polyline points="0,100 50,80 100,60 150,70 200,40 250,50 300,30" fill="none" stroke="#7C5CFC" stroke-width="2"/><polyline points="0,100 50,80 100,60 150,70 200,40 250,50 300,30" fill="url(#gradient)" stroke="none"/></svg></div></div>
-          <div class="chart-card"><h4>打卡日历</h4><div class="checkin-calendar" id="checkin-calendar"><div class="calendar-grid"></div></div></div>
-          <div class="chart-card"><h4>记忆曲线</h4><div class="chart-area" id="memory-curve"><svg viewBox="0 0 300 120" class="line-chart"><path d="M0,20 C30,20 50,80 80,85 C110,88 130,40 160,45 C190,50 210,30 240,35 C260,38 280,25 300,20" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-dasharray="4,4"/><path d="M0,20 C30,40 50,60 80,50 C110,45 130,30 160,25 C190,22 210,18 240,15 C260,13 280,12 300,10" fill="none" stroke="#10B981" stroke-width="2"/></svg></div></div>
-          <div class="section-header"><h3>薄弱知识点</h3><span class="section-more" onclick="navigateTo('page-heatmap')">查看全部</span></div>
-          <div class="weak-list"><div class="weak-item"><span class="weak-name">艺术的社会功能</span><span class="weak-hp red">HP 25</span></div><div class="weak-item"><span class="weak-name">艺术与经济基础</span><span class="weak-hp yellow">HP 45</span></div><div class="weak-item"><span class="weak-name">现代设计运动</span><span class="weak-hp yellow">HP 50</span></div></div>
+        <div class="page-content data-page">
+  <div class="period-tabs">
+    <span class="period-tab active" onclick="switchDataPeriod(this,'week')">本周</span>
+    <span class="period-tab" onclick="switchDataPeriod(this,'month')">本月</span>
+    <span class="period-tab" onclick="switchDataPeriod(this,'total')">总计</span>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="stats-overview">
+    <div class="stat-ring-card">
+      <svg width="90" height="90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#f3f4f6" stroke-width="8"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="url(#statGrad1)" stroke-width="8" stroke-linecap="round" stroke-dasharray="198 264"/>
+      </svg>
+      <defs><linearGradient id="statGrad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient></defs>
+      <div class="stat-ring-value"><strong>127h</strong><span>总学习时长</span></div>
+    </div>
+    <div class="stat-mini-grid">
+      <div class="stat-mini">
+        <span class="sm-value purple">89%</span><span class="sm-label">正确率</span>
+      </div>
+      <div class="stat-mini">
+        <span class="sm-value green">156/200</span><span class="sm-label">已掌握</span>
+      </div>
+      <div class="stat-mini">
+        <span class="sm-value orange">23天</span><span class="sm-label">连续打卡</span>
+      </div>
+      <div class="stat-mini">
+        <span class="sm-value blue">2340</span><span class="sm-label">总积分</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learning Trend Line Chart -->
+  <div class="viz-card">
+    <div class="viz-header"><h4>📈 学习趋势</h4><span class="viz-period">近7天</span></div>
+    <div class="chart-area line-chart-area">
+      <svg viewBox="0 0 300 140" preserveAspectRatio="none" style="width:100%;height:140px">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="lineStrokeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#8B5CF6"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,110 Q30,95 60,80 T120,70 T180,55 T240,45 T300,35 L300,140 L0,140 Z" fill="url(#lineGrad)"/>
+        <path d="M0,110 Q30,95 60,80 T120,70 T180,55 T240,45 T300,35" fill="none" stroke="url(#lineStrokeGrad)" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="0" cy="110" r="3.5" fill="#7C3AED"/>
+        <circle cx="60" cy="80" r="3.5" fill="#7C3AED"/>
+        <circle cx="120" cy="70" r="3.5" fill="#7C3AED"/>
+        <circle cx="180" cy="55" r="3.5" fill="#7C3AED"/>
+        <circle cx="240" cy="45" r="3.5" fill="#7C3AED"/>
+        <circle cx="300" cy="35" r="4.5" fill="#7C3AED" stroke="white" stroke-width="2"/>
+      </svg>
+      <div class="chart-x-axis">
+        <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>今天</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subject Distribution Pie Chart -->
+  <div class="viz-card">
+    <div class="viz-header"><h4>📊 学科分布</h4></div>
+    <div class="pie-chart-wrap">
+      <svg viewBox="0 0 200 200" width="160" height="160">
+        <defs>
+          <filter id="pieShadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/></filter>
+        </defs>
+        <g filter="url(#pieShadow)" transform="translate(100,100)">
+          <path d="M0,0 L0,-75 A75,75 0 1,1 -65,37 Z" fill="#7C3AED"/>
+          <path d="M0,0 L-65,37 A75,75 0 0,1 -53,-53 Z" fill="#10B981"/>
+          <path d="M0,0 L-53,-53 A75,75 0 0,1 0,-75 Z" fill="#F59E0B"/>
+          <path d="M0,0 L65,37 A75,75 0 0,1 -65,37 Z" fill="#EC4899" opacity="0.85"/>
+        </g>
+        <text x="100" y="105" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a2e">156个</text>
+        <text x="100" y="122" text-anchor="middle" font-size="11" fill="#9ca3af">知识点</text>
+      </svg>
+      <div class="pie-legend">
+        <div class="pie-legend-item"><span class="pl-dot" style="background:#7C3AED"></span><span class="pl-name">艺术概论</span><span class="pl-val">68</span></div>
+        <div class="pie-legend-item"><span class="pl-dot" style="background:#10B981"></span><span class="pl-name">设计史</span><span class="pl-val">52</span></div>
+        <div class="pie-legend-item"><span class="pl-dot" style="background:#F59E0B"></span><span class="pl-name">中国美术</span><span class="pl-val">24</span></div>
+        <div class="pie-legend-item"><span class="pl-dot" style="background:#EC4899"></span><span class="pl-name">英语政治</span><span class="pl-val">12</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory Curve (Tidal) Chart -->
+  <div class="viz-card">
+    <div class="viz-header"><h4>🌊 记忆曲线</h4><span class="viz-badge">遗忘曲线分析</span></div>
+    <div class="tidal-chart-wrap">
+      <svg viewBox="0 0 300 130" preserveAspectRatio="none" style="width:100%;height:130px">
+        <defs>
+          <linearGradient id="tidalGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,20 C40,18 60,25 80,22 C100,19 120,12 150,28 C180,44 210,38 230,32 C250,26 280,24 300,26 L300,130 L0,130Z" fill="url(#tidalGrad)" opacity="0.6"/>
+        <path d="M0,20 C40,18 60,25 80,22 C100,19 120,12 150,28 C180,44 210,38 230,32 C250,26 280,24 300,26" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-dasharray="6,4"/>
+        <path d="M0,60 C40,58 60,62 80,58 C100,54 120,48 150,52 C180,56 210,50 230,48 C250,46 280,48 300,50" fill="none" stroke="#10B981" stroke-width="2"/>
+        <g transform="translate(150,28)">
+          <circle r="4" fill="#8B5CF6" stroke="white" stroke-width="2"/>
+          <rect x="-22" y="-34" width="44" height="20" rx="4" fill="#8B5CF6"/>
+          <text x="0" y="-21" text-anchor="middle" font-size="10" fill="white" font-weight="600">复习点</text>
+        </g>
+      </svg>
+      <div class="tidal-legend">
+        <span class="tl-item"><span class="tl-line" style="border-color:#8B5CF6;border-style:dashed"></span>记忆保持率</span>
+        <span class="tl-item"><span class="tl-line" style="border-color:#10B981"></span>实际掌握度</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode Usage Bar Chart -->
+  <div class="viz-card">
+    <div class="viz-header"><h4>⚡ 模式使用分布</h4></div>
+    <div class="bar-chart-list">
+      <div class="bar-item">
+        <span class="bi-label">遮挡回忆</span>
+        <div class="bi-track"><div class="bi-fill" style="width:78%;background:var(--primary-gradient)"></div></div>
+        <span class="bi-num">42次</span>
+      </div>
+      <div class="bar-item">
+        <span class="bi-label">结构拆解</span>
+        <div class="bi-track"><div class="bi-fill" style="width:55%;background:linear-gradient(135deg,#10B981,#34D399)"></div></div>
+        <span class="bi-num">29次</span>
+      </div>
+      <div class="bar-item">
+        <span class="bi-label">关键词联想</span>
+        <div class="bi-track"><div class="bi-fill" style="width:38%;background:linear-gradient(135deg,#F59E0B,#FBBF24)"></div></div>
+        <span class="bi-num">20次</span>
+      </div>
+      <div class="bar-item">
+        <span class="bi-label">闯关模式</span>
+        <div class="bi-track"><div class="bi-fill" style="width:25%;background:linear-gradient(135deg,#EC4899,#F472B6)"></div></div>
+        <span class="bi-num">13次</span>
+      </div>
+      <div class="bar-item">
+        <span class="bi-label">逆向背诵</span>
+        <div class="bi-track"><div class="bi-fill" style="width:12%;background:linear-gradient(135deg,#3B82F6,#60A5FA)"></div></div>
+        <span class="bi-num">6次</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in Calendar -->
+  <div class="viz-card">
+    <div class="viz-header"><h4>📅 打卡日历</h4><span class="viz-period">2026年5月</span></div>
+    <div class="checkin-calendar" id="checkin-calendar">
+      <div class="calendar-grid">
+        <div class="cal-header"><span class="cal-weekday">日</span><span class="cal-weekday">一</span><span class="cal-weekday">二</span><span class="cal-weekday">三</span><span class="cal-weekday">四</span><span class="cal-weekday">五</span><span class="cal-weekday">六</span></div>
+        <div class="cal-body">
+          <span class="cal-day empty"></span><span class="cal-day empty"></span><span class="cal-day empty"></span><span class="cal-day empty"></span><span class="cal-day empty"></span><span class="cal-day">1</span><span class="cal-day checked">2</span>
+          <span class="cal-day">3</span><span class="cal-day checked">4</span><span class="cal-day checked">5</span><span class="cal-day">6</span><span class="cal-day checked">7</span><span class="cal-day">8</span><span class="cal-day checked">9</span>
+          <span class="cal-day checked">10</span><span class="cal-day checked">11</span><span class="cal-day checked">12</span><span class="cal-day checked">13</span><span class="cal-day checked">14</span><span class="cal-day">15</span><span class="cal-day checked">16</span>
+          <span class="cal-day checked">17</span><span class="cal-day">18</span><span class="cal-day checked">19</span><span class="cal-day checked">20</span><span class="cal-day checked">21</span><span class="cal-day checked">22</span><span class="cal-day checked">23</span>
+          <span class="cal-day">24</span><span class="cal-day checked">25</span><span class="cal-day checked">26</span><span class="cal-day today checked">27</span><span class="cal-day">28</span><span class="cal-day">29</span><span class="cal-day">30</span><span class="cal-day">31</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weak Points List -->
+  <div class="viz-card weak-points-card">
+    <div class="viz-header"><h4>🔴 薄弱点排行</h4><span class="viz-link" onclick="navigateTo('page-review')">去复习 →</span></div>
+    <div class="weak-rank-list">
+      <div class="weak-rank-item">
+        <span class="wr-num wr-1">1</span>
+        <div class="wr-info"><strong>工艺美术运动</strong><span>HP 30 · 错误 12 次</span></div>
+        <span class="wr-bar"><span class="wr-fill red" style="width:30%"></span></span>
+      </div>
+      <div class="weak-rank-item">
+        <span class="wr-num wr-2">2</span>
+        <div class="wr-info"><strong>艺术起源学说</strong><span>HP 45 · 错误 8 次</span></div>
+        <span class="wr-bar"><span class="wr-fill yellow" style="width:45%"></span></span>
+      </div>
+      <div class="weak-rank-item">
+        <span class="wr-num wr-3">3</span>
+        <div class="wr-info"><strong>艺术的社会功能</strong><span>HP 60 · 错误 5 次</span></div>
+        <span class="wr-bar"><span class="wr-fill yellow" style="width:60%"></span></span>
+      </div>
+    </div>
+  </div>
+</div>
         <div class="tab-bar">
           <div class="tab-item" data-tab="0" onclick="switchTab(0)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></div>
           <div class="tab-item" data-tab="1" onclick="switchTab(1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>背书库</span></div>
-          <div class="tab-item active" data-tab="2" onclick="switchTab(2)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
-          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+          <div class="tab-item tab-center" data-tab="2" onclick="switchTab(2)">
+            <div class="ai-center-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10 5z"/><circle cx="12" cy="12" r="3"/><path d="M12 16v4M8 21h8"/></svg></div>
+            <span>AI伴学</span>
+          </div>
+          <div class="tab-item active" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
+          <div class="tab-item" data-tab="4" onclick="switchTab(4)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
         </div>
       </section>
 
@@ -530,10 +910,10 @@
         <div class="nav-bar"><button class="nav-back" onclick="goBack()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="nav-title">主题</span><div class="nav-actions"></div></div>
         <div class="page-content">
           <div class="theme-grid">
-            <div class="theme-card active" onclick="selectTheme('purple')"><div class="theme-preview" style="background:linear-gradient(135deg,#7C5CFC,#5B3FD4)"></div><span class="theme-name">默认紫</span></div>
-            <div class="theme-card" onclick="selectTheme('blue')"><div class="theme-preview" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8)"></div><span class="theme-name">深海蓝</span></div>
-            <div class="theme-card" onclick="selectTheme('pink')"><div class="theme-preview" style="background:linear-gradient(135deg,#EC4899,#BE185D)"></div><span class="theme-name">樱花粉</span></div>
-            <div class="theme-card" onclick="selectTheme('dark')"><div class="theme-preview" style="background:linear-gradient(135deg,#1F2937,#111827)"></div><span class="theme-name">暗夜黑</span></div>
+            <div class="theme-card active" onclick="selectTheme('purple')"><div class="theme-preview" style="background:linear-gradient(135deg,#7C3AED,#5B21B6)"></div><span class="theme-name">星空紫</span></div>
+            <div class="theme-card" onclick="selectTheme('green')"><div class="theme-preview" style="background:linear-gradient(135deg,#10B981,#059669)"></div><span class="theme-name">薄荷绿</span></div>
+            <div class="theme-card" onclick="selectTheme('blue')"><div class="theme-preview" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8)"></div><span class="theme-name">天空蓝</span></div>
+            <div class="theme-card" onclick="selectTheme('orange')"><div class="theme-preview" style="background:linear-gradient(135deg,#F59E0B,#D97706)"></div><span class="theme-name">暖阳橙</span></div>
             <div class="theme-card custom" onclick="showMembershipModal()"><div class="theme-preview" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span class="theme-name">自定义 <span class="vip-tag">会员</span></span></div>
           </div>
           <button class="btn-primary btn-full" onclick="applyTheme()">应用主题</button>
@@ -612,7 +992,7 @@
         <div class="page-content">
           <div class="profile-header">
             <div class="profile-avatar">G</div>
-            <div class="profile-info"><span class="profile-name">Gale</span><span class="profile-target">考研设计史论 · 江浙沪211</span></div>
+            <div class="profile-info"><span class="profile-name">Gale</span><span class="profile-target">考研党 · 设计史论 · 目标江浙沪211</span></div>
             <button class="membership-badge" onclick="showMembershipModal()">会员</button>
           </div>
           <div class="profile-stats">
@@ -634,8 +1014,12 @@
         <div class="tab-bar">
           <div class="tab-item" data-tab="0" onclick="switchTab(0)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></div>
           <div class="tab-item" data-tab="1" onclick="switchTab(1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>背书库</span></div>
-          <div class="tab-item" data-tab="2" onclick="switchTab(2)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
-          <div class="tab-item active" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+          <div class="tab-item tab-center" data-tab="2" onclick="switchTab(2)">
+            <div class="ai-center-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10 5z"/><circle cx="12" cy="12" r="3"/><path d="M12 16v4M8 21h8"/></svg></div>
+            <span>AI伴学</span>
+          </div>
+          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
+          <div class="tab-item active" data-tab="4" onclick="switchTab(4)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
         </div>
       </section>
 
@@ -688,6 +1072,77 @@
             <div class="about-link" onclick="openLink('license')"><span>开源许可</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
           </div>
           <p class="about-copyright">© 2026 Memora. All rights reserved.</p>
+        </div>
+      </section>
+
+      <section class="page" id="page-ai-companion">
+        <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+        <div class="nav-bar"><button class="nav-back" style="visibility:hidden"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="nav-title">AI 伴学</span><div class="nav-actions"></div></div>
+        <div class="page-content ai-companion-page">
+          <div class="ai-welcome-card">
+            <div class="ai-welcome-avatar">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/><path d="M15 8a3 3 0 1 0-6 0 3 3 0 0 1 6 0"/><circle cx="18" cy="5" r="2" fill="#FBBF24"/></svg>
+            </div>
+            <h2>你好，Gale 👋</h2>
+            <p class="ai-welcome-sub">我是你的 AI 学习助教，有什么可以帮你的？</p>
+          </div>
+
+          <div class="ai-quick-actions">
+            <div class="ai-qa" onclick="quickAsk('today')">
+              <span class="ai-qa-icon">📋</span>
+              <span>今日计划</span>
+            </div>
+            <div class="ai-qa" onclick="quickAsk('weak')">
+              <span class="ai-qa-icon">🔴</span>
+              <span>薄弱分析</span>
+            </div>
+            <div class="ai-qa" onclick="quickAsk('mnemonic')">
+              <span class="ai-qa-icon">💡</span>
+              <span>记忆口诀</span>
+            </div>
+            <div class="ai-qa" onclick="quickAsk('motivation')">
+              <span class="ai-qa-icon">💪</span>
+              <span>打气鼓励</span>
+            </div>
+          </div>
+
+          <div class="ai-conversation">
+            <div class="ai-msg-bubble">
+              <div class="ai-msg-avatar">AI</div>
+              <div class="ai-msg-text">根据你的学习数据，我发现你最近在「工艺美术运动」上有些吃力。要不要我帮你生成一个记忆口诀？😊</div>
+            </div>
+            <div class="user-msg-bubble">
+              <div class="user-msg-text">好的，帮我生成一下</div>
+            </div>
+            <div class="ai-msg-bubble">
+              <div class="ai-msg-avatar">AI</div>
+              <div class="ai-msg-text">来啦！试试这样记：<br><br><strong>「莫里斯举大旗，手工复兴反机器，师承自然做设计」</strong><br><br>把威廉·莫里斯想象成举旗的领袖，反机器=手工，师承自然=设计原则。怎么样？好记多了吧！✨</div>
+            </div>
+          </div>
+
+          <div class="ai-input-area">
+            <div class="ai-suggest-tags">
+              <span class="ai-tag" onclick="sendAiTag('帮我出个题')">帮我出个题</span>
+              <span class="ai-tag" onclick="sendAiTag('解释一下XX概念')">解释概念</span>
+              <span class="ai-tag" onclick="sendAiTag('给我一个记忆技巧')">记忆技巧</span>
+            </div>
+            <div class="ai-input-row">
+              <input type="text" class="ai-input" placeholder="问 AI 任何关于记忆的问题..." id="ai-companion-input">
+              <button class="ai-send-btn" onclick="sendCompanionMsg()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item" data-tab="0" onclick="switchTab(0)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></div>
+          <div class="tab-item" data-tab="1" onclick="switchTab(1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>背书库</span></div>
+          <div class="tab-item tab-center active" data-tab="2" onclick="switchTab(2)">
+            <div class="ai-center-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10 5z"/><circle cx="12" cy="12" r="3"/><path d="M12 16v4M8 21h8"/></svg></div>
+            <span>AI伴学</span>
+          </div>
+          <div class="tab-item" data-tab="3" onclick="switchTab(3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据</span></div>
+          <div class="tab-item" data-tab="4" onclick="switchTab(4)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
         </div>
       </section>
 

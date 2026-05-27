@@ -39,7 +39,7 @@ function goBack() {
 }
 
 function switchTab(index) {
-  const tabPages = ['page-books', 'page-books-list', 'page-data', 'page-profile'];
+  const tabPages = ['page-books', 'page-books-list', 'page-ai-companion', 'page-data', 'page-profile'];
   const pageId = tabPages[index] || 'page-books';
   pageHistory.length = 0;
   const currentEl = document.getElementById(currentPage);
@@ -1434,6 +1434,153 @@ function wechatLogin() {
     showToast('登录成功！');
     navigateTo('page-books');
   }, 1500);
+}
+
+let onbCurrentStep = 1;
+const onbTotalSteps = 4;
+let onbData = { identity: '', goal: '', exam: '', source: '' };
+
+function nextOnbStep() {
+  if (onbCurrentStep >= onbTotalSteps) return;
+  document.getElementById(`onb-step-${onbCurrentStep}`).classList.remove('active');
+  onbCurrentStep++;
+  const nextEl = document.getElementById(`onb-step-${onbCurrentStep}`);
+  if (nextEl) nextEl.classList.add('active');
+  document.getElementById('onb-step-num').textContent = `${onbCurrentStep}/${onbTotalSteps}`;
+  document.getElementById('onb-progress-bar').style.width = `${(onbCurrentStep/onbTotalSteps)*100}%`;
+  const nextBtn = document.getElementById('onb-next-btn');
+  if (onbCurrentStep === onbTotalSteps) {
+    nextBtn.textContent = '完成';
+  }
+  if (onbCurrentStep === 4) {
+    document.getElementById('memory-test-intro').style.display = '';
+  }
+}
+
+function selectIdentity(el, value) {
+  document.querySelectorAll('.identity-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  onbData.identity = value;
+}
+
+function selectGoal(el, value) {
+  document.querySelectorAll('.goal-item').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  onbData.goal = value;
+}
+
+function selectExam(el, value) {
+  document.querySelectorAll('.exam-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  onbData.exam = value;
+}
+
+function selectSource(el) {
+  document.querySelectorAll('.source-item').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  onbData.source = el.querySelector('span').textContent;
+  setTimeout(() => { document.getElementById('memory-test-intro').style.display = ''; }, 300);
+}
+
+let memTimer = null;
+let memAnswer = '37194';
+
+function startMemoryTest() {
+  document.getElementById('memory-test-intro').style.display = 'none';
+  document.getElementById('memory-test-area').style.display = 'block';
+  let seconds = 10;
+  const timerEl = document.getElementById('test-timer');
+  memTimer = setInterval(() => {
+    seconds--;
+    timerEl.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(memTimer);
+      document.getElementById('test-memorize').style.display = 'none';
+      document.getElementById('test-input').style.display = 'block';
+    }
+  }, 1000);
+}
+
+function submitMemoryTest() {
+  const answer = document.getElementById('memory-answer').value.replace(/\s/g, '');
+  const correct = answer === memAnswer || answer.length >= 4;
+  let score = correct ? Math.max(60, 100 - Math.abs(answer.length - 5) * 10) : Math.max(20, 50 - Math.abs(answer.length - 5) * 5);
+  score = Math.min(100, Math.max(0, score));
+  document.getElementById('test-input').style.display = 'none';
+  document.getElementById('test-result').style.display = 'block';
+  document.getElementById('mem-test-score').textContent = score;
+  const feedback = document.getElementById('mem-test-feedback');
+  if (score >= 80) feedback.textContent = '太棒了！你的瞬时记忆力很出色，配合 Memora 的结构化记忆方法，效率会更高！🎉';
+  else if (score >= 50) feedback.textContent = '还不错！Memora 的提取式记忆训练可以帮你进一步提升。坚持练习！💪';
+  else feedback.textContent = '别担心！记忆力就像肌肉，越练越强。Memora 会帮你科学训练！🧠';
+}
+
+function finishOnboarding() {
+  navigateTo('page-books');
+}
+
+function toggleSuggestions() {
+  const body = document.getElementById('suggestions-body');
+  const toggle = document.getElementById('suggest-toggle');
+  if (body.style.display === 'block' || body.style.display === '') {
+    body.style.display = 'none';
+    toggle.textContent = '展开';
+  } else {
+    body.style.display = 'block';
+    toggle.textContent = '收起';
+  }
+}
+
+function quickAsk(type) {
+  navigateTo('page-ai');
+  setTimeout(() => {
+    const input = document.querySelector('#page-ai .ai-input');
+    if (input) {
+      const prompts = { today: '今天的背诵计划是什么？', weak: '我的薄弱知识点有哪些？', mnemonic: '帮我生成一个记忆口诀', motivation: '给我一些鼓励的话' };
+      input.value = prompts[type] || '';
+      sendCompanionMsg();
+    }
+  }, 300);
+}
+
+function sendAiTag(text) {
+  const input = document.getElementById('ai-companion-input');
+  if (input) { input.value = text; sendCompanionMsg(); }
+}
+
+function sendCompanionMsg() {
+  const input = document.getElementById('ai-companion-input');
+  if (!input || !input.value.trim()) return;
+  addCompanionBubble(input.value, 'user');
+  input.value = '';
+  setTimeout(() => {
+    const responses = [
+      '这个问题很好！让我从记忆科学的角度来分析...',
+      '根据艾宾浩斯遗忘曲线，现在复习效果最好！',
+      '我建议用「关键词联想法」来记这个知识点。',
+      '你已经连续学习了 23 天，太厉害了！继续保持 💪'
+    ];
+    addCompanionBubble(responses[Math.floor(Math.random() * responses.length)], 'ai');
+  }, 800);
+}
+
+function addCompanionBubble(text, type) {
+  const container = document.querySelector('.ai-conversation');
+  if (!container) return;
+  const bubble = document.createElement('div');
+  bubble.className = type === 'user' ? 'user-msg-bubble' : 'ai-msg-bubble';
+  if (type === 'user') {
+    bubble.innerHTML = `<div class="user-msg-text">${text}</div>`;
+  } else {
+    bubble.innerHTML = `<div class="ai-msg-avatar">AI</div><div class="ai-msg-text">${text}</div>`;
+  }
+  container.appendChild(bubble);
+  container.scrollTop = container.scrollHeight;
+}
+
+function switchDataPeriod(el, period) {
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
