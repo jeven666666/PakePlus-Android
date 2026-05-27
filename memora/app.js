@@ -1,55 +1,40 @@
 const pageHistory = [];
 let currentPage = 'page-home';
 
-const memberOnlyPages = [
-  'page-challenge-hall', 'page-challenge-detail', 'page-challenge-fill',
-  'page-challenge-recite', 'page-challenge-blind', 'page-challenge-reorder',
-  'page-challenge-result', 'page-challenge-rank',
-  'page-battle', 'page-battle-invite', 'page-battle-arena', 'page-battle-result',
-  'page-voice'
-];
-
 function navigateTo(pageId, params) {
-  if (!state.user.isMember && memberOnlyPages.includes(pageId)) {
-    showMembershipModal();
-    return;
-  }
-  const currentEl = document.getElementById(currentPage);
-  if (currentEl) currentEl.classList.remove('active');
-  const targetEl = document.getElementById(pageId);
-  if (targetEl) targetEl.classList.add('active');
-  if (currentPage !== pageId) {
-    pageHistory.push(currentPage);
-  }
+  const current = document.querySelector('.page.active');
+  if (current) current.classList.remove('active');
+  const target = document.getElementById(pageId);
+  if (target) target.classList.add('active');
+  pageHistory.push(currentPage);
   currentPage = pageId;
   onPageEnter(pageId, params);
 }
 
 function goBack() {
   if (pageHistory.length > 0) {
-    const prevPage = pageHistory.pop();
-    const currentEl = document.getElementById(currentPage);
-    if (currentEl) currentEl.classList.remove('active');
-    const prevEl = document.getElementById(prevPage);
-    if (prevEl) prevEl.classList.add('active');
-    currentPage = prevPage;
+    const prev = pageHistory.pop();
+    const current = document.querySelector('.page.active');
+    if (current) current.classList.remove('active');
+    const target = document.getElementById(prev);
+    if (target) target.classList.add('active');
+    currentPage = prev;
   } else {
-    switchTab(0);
+    navigateTo('page-books');
   }
 }
 
 function switchTab(index) {
-  const tabPages = ['page-books', 'page-books-list', 'page-ai-companion', 'page-data', 'page-profile'];
-  const pageId = tabPages[index] || 'page-books';
+  const tabs = ['page-books', 'page-books-list', 'page-data', 'page-profile'];
+  const pageId = tabs[index];
   pageHistory.length = 0;
-  const currentEl = document.getElementById(currentPage);
-  if (currentEl) currentEl.classList.remove('active');
-  const targetEl = document.getElementById(pageId);
-  if (targetEl) targetEl.classList.add('active');
+  const current = document.querySelector('.page.active');
+  if (current) current.classList.remove('active');
+  const target = document.getElementById(pageId);
+  if (target) target.classList.add('active');
   currentPage = pageId;
-  document.querySelectorAll('.tab-item').forEach(tab => {
-    tab.classList.toggle('active', parseInt(tab.dataset.tab) === index);
-  });
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll(`.tab-item[data-tab="${index}"]`).forEach(t => t.classList.add('active'));
 }
 
 const state = {
@@ -339,6 +324,12 @@ function showFloatingText(text) {
   setTimeout(() => el.remove(), 1000);
 }
 
+const planConfig = {
+  monthly: { name: '月卡会员', price: '¥19.9', months: 1 },
+  quarterly: { name: '季卡会员', price: '¥49.9', months: 3 },
+  yearly: { name: '年卡会员', price: '¥149.9', months: 12 }
+};
+
 function showMembershipModal() {
   const card = document.getElementById('membership-card');
   const success = document.getElementById('membership-success');
@@ -352,12 +343,6 @@ function showMembershipModal() {
 function closeMembershipModal() {
   document.getElementById('membership-modal').classList.remove('active');
 }
-
-const planConfig = {
-  monthly: { name: '月卡会员', price: '¥19.9', months: 1 },
-  quarterly: { name: '季卡会员', price: '¥49.9', months: 3 },
-  yearly: { name: '年卡会员', price: '¥149.9', months: 12 }
-};
 
 function selectPlan(plan) {
   state.selectedPlan = plan || state.selectedPlan;
@@ -422,12 +407,6 @@ function updateMembershipUI() {
   document.querySelectorAll('.vip-tag').forEach(tag => {
     if (state.user.isMember) tag.style.display = 'none';
   });
-  document.querySelectorAll('.theme-card.locked').forEach(card => {
-    if (state.user.isMember) {
-      card.classList.remove('locked');
-      card.classList.add('unlocked');
-    }
-  });
 }
 
 function showBottomSheet(content) {
@@ -455,7 +434,7 @@ function showToast(message, type) {
   }, 2000);
 }
 
-function nextOnboardingStep() {
+function nextOnboarding() {
   state.onboardingStep++;
   if (state.onboardingStep >= 3) {
     navigateTo('page-books');
@@ -598,15 +577,6 @@ function initReorderChallenge() {
   updateTimerDisplay(60);
 }
 
-function shuffleArray(arr) {
-  let shuffled = [...arr];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
 function initDragAndDrop() {
   const container = document.querySelector('.reorder-list');
   if (!container) return;
@@ -647,45 +617,6 @@ function getDragAfterElement(container, y) {
       return closest;
     }
   }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-function displayChallengeResult(params) {
-  if (!params) return;
-  const starsEl = document.querySelector('#page-challenge-result .result-stars');
-  if (starsEl) {
-    let starsHtml = '';
-    for (let i = 0; i < 3; i++) {
-      const fill = i < params.stars ? '#FFD700' : '#ddd';
-      starsHtml += `<svg width="48" height="48" viewBox="0 0 24 24" fill="${fill}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
-    }
-    starsEl.innerHTML = starsHtml;
-  }
-  const dimsEl = document.querySelector('#page-challenge-result .score-dimensions');
-  if (dimsEl) {
-    dimsEl.innerHTML = `
-      <div class="dimension-item"><span class="dimension-label">关键词匹配</span><div class="dimension-bar"><div class="dimension-fill" style="width:${params.keywordScore}%"></div></div><span class="dimension-value">${params.keywordScore}%</span></div>
-      <div class="dimension-item"><span class="dimension-label">语义相似度</span><div class="dimension-bar"><div class="dimension-fill" style="width:${params.semanticScore}%"></div></div><span class="dimension-value">${params.semanticScore}%</span></div>
-      <div class="dimension-item"><span class="dimension-label">结构完整度</span><div class="dimension-bar"><div class="dimension-fill" style="width:${params.structureScore}%"></div></div><span class="dimension-value">${params.structureScore}%</span></div>`;
-  }
-  const pointsEl = document.querySelector('#page-challenge-result .points-value');
-  if (pointsEl) pointsEl.textContent = '+' + Math.round(params.totalScore * 1.2);
-  const hpEl = document.querySelector('#page-challenge-result .hp-value');
-  if (hpEl) {
-    const hpChange = params.totalScore >= 50 ? Math.floor(Math.random() * 11) + 5 : -(Math.floor(Math.random() * 16) + 5);
-    hpEl.textContent = (hpChange >= 0 ? '+' : '') + hpChange;
-    hpEl.className = 'hp-value ' + (hpChange >= 0 ? 'positive' : 'negative');
-  }
-  if (params.stars >= 2) {
-    const achEl = document.getElementById('achievement-unlock');
-    if (achEl) achEl.style.display = '';
-  }
-}
-
-function renderChallengeHall() {
-  const totalStars = state.challengeState.levels.reduce((sum, l) => sum + l.bestStars, 0);
-  const maxStars = state.challengeState.totalLevels * 3;
-  const starsEl = document.querySelector('#page-challenge-hall .total-stars');
-  if (starsEl) starsEl.textContent = `⭐ ${totalStars}/${maxStars}`;
 }
 
 let isRecording = false;
@@ -733,18 +664,6 @@ function simulateVoiceResult() {
   }
 }
 
-function finishVoiceRecording() {
-  if (isRecording) {
-    isRecording = false;
-    clearInterval(voiceTimerInterval);
-    const btn = document.getElementById('mic-button');
-    if (btn) btn.classList.remove('recording');
-  }
-  simulateVoiceResult();
-  showToast('语音背诵已提交');
-  navigateTo('page-recall-result');
-}
-
 const aiResponses = [
   '这个概念可以从三个维度理解：1) 本质层面——它是什么；2) 功能层面——它有什么作用；3) 历史层面——它是如何发展的。',
   '记忆口诀：想一个谐音联想，把关键词串成一句话。比如"社上经反"可以联想为"社上经反"→"社会上层经济反作用"。',
@@ -761,7 +680,7 @@ function initAIChat() {
   }
 }
 
-function sendAiMessage() {
+function sendAIMessage() {
   const input = document.getElementById('ai-input');
   if (!input || !input.value.trim()) return;
   if (state.user.dailyUsed.aiChat >= state.user.dailyQuota.aiChat) {
@@ -802,7 +721,7 @@ function aiAction(action) {
   if (input) {
     input.value = actionMessages[action] || '';
   }
-  sendAiMessage();
+  sendAIMessage();
 }
 
 const quizData = {
@@ -966,6 +885,143 @@ function updateExamCountdown() {
   });
 }
 
+function displayChallengeResult(params) {
+  if (!params) return;
+  const starsEl = document.querySelector('#page-challenge-result .result-stars');
+  if (starsEl) {
+    let starsHtml = '';
+    for (let i = 0; i < 3; i++) {
+      const fill = i < params.stars ? '#FFD700' : '#ddd';
+      starsHtml += `<svg width="48" height="48" viewBox="0 0 24 24" fill="${fill}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    }
+    starsEl.innerHTML = starsHtml;
+  }
+  const dimsEl = document.querySelector('#page-challenge-result .score-dimensions');
+  if (dimsEl) {
+    dimsEl.innerHTML = `
+      <div class="dimension-item"><span class="dimension-label">关键词匹配</span><div class="dimension-bar"><div class="dimension-fill" style="width:${params.keywordScore}%"></div></div><span class="dimension-value">${params.keywordScore}%</span></div>
+      <div class="dimension-item"><span class="dimension-label">语义相似度</span><div class="dimension-bar"><div class="dimension-fill" style="width:${params.semanticScore}%"></div></div><span class="dimension-value">${params.semanticScore}%</span></div>
+      <div class="dimension-item"><span class="dimension-label">结构完整度</span><div class="dimension-bar"><div class="dimension-fill" style="width:${params.structureScore}%"></div></div><span class="dimension-value">${params.structureScore}%</span></div>`;
+  }
+  const pointsEl = document.querySelector('#page-challenge-result .points-value');
+  if (pointsEl) pointsEl.textContent = '+' + Math.round(params.totalScore * 1.2);
+  const hpEl = document.querySelector('#page-challenge-result .hp-value');
+  if (hpEl) {
+    const hpChange = params.totalScore >= 50 ? Math.floor(Math.random() * 11) + 5 : -(Math.floor(Math.random() * 16) + 5);
+    hpEl.textContent = (hpChange >= 0 ? '+' : '') + hpChange;
+    hpEl.className = 'hp-value ' + (hpChange >= 0 ? 'positive' : 'negative');
+  }
+  if (params.stars >= 2) {
+    const achEl = document.getElementById('achievement-unlock');
+    if (achEl) achEl.style.display = '';
+  }
+}
+
+function renderChallengeHall() {
+  const totalStars = state.challengeState.levels.reduce((sum, l) => sum + l.bestStars, 0);
+  const maxStars = state.challengeState.totalLevels * 3;
+  const starsEl = document.querySelector('#page-challenge-hall .total-stars');
+  if (starsEl) starsEl.textContent = `⭐ ${totalStars}/${maxStars}`;
+}
+
+function submitChallengeFill() {
+  stopTimer();
+  const kp = knowledgePoints[0];
+  const inputs = document.querySelectorAll('#page-challenge-fill .blank-input');
+  let userAnswer = '';
+  if (inputs.length > 0) {
+    userAnswer = Array.from(inputs).map(i => i.value).join('，');
+  }
+  const result = calculateScore(userAnswer, kp.content, kp.keywords);
+  const correct = result.totalScore >= 50;
+  updateCombo(correct);
+  if (correct) {
+    updateHP(Math.floor(Math.random() * 11) + 5);
+  } else {
+    updateHP(-(Math.floor(Math.random() * 16) + 5));
+  }
+  navigateTo('page-challenge-result', result);
+}
+
+function showChallengeHint() {
+  const kp = knowledgePoints[0];
+  showToast('提示：' + kp.keywords[0]);
+}
+
+function submitChallengeRecite() {
+  stopTimer();
+  const kp = knowledgePoints[0];
+  const textarea = document.querySelector('#page-challenge-recite textarea');
+  let userAnswer = textarea ? textarea.value : '';
+  const result = calculateScore(userAnswer, kp.content, kp.keywords);
+  const correct = result.totalScore >= 50;
+  updateCombo(correct);
+  if (correct) {
+    updateHP(Math.floor(Math.random() * 11) + 5);
+  } else {
+    updateHP(-(Math.floor(Math.random() * 16) + 5));
+  }
+  navigateTo('page-challenge-result', result);
+}
+
+function submitChallengeBlind() {
+  stopTimer();
+  const kp = knowledgePoints[0];
+  const textarea = document.querySelector('#page-challenge-blind textarea');
+  let userAnswer = textarea ? textarea.value : '';
+  const result = calculateScore(userAnswer, kp.content, kp.keywords);
+  const correct = result.totalScore >= 50;
+  updateCombo(correct);
+  if (correct) {
+    updateHP(Math.floor(Math.random() * 11) + 5);
+  } else {
+    updateHP(-(Math.floor(Math.random() * 16) + 5));
+  }
+  navigateTo('page-challenge-result', result);
+}
+
+function submitReorder() {
+  stopTimer();
+  const kp = knowledgePoints[0];
+  const items = document.querySelectorAll('#reorder-list .reorder-item');
+  let userAnswer = Array.from(items).map(item => {
+    const textEl = item.querySelector('.reorder-text');
+    return textEl ? textEl.textContent : '';
+  }).join('，');
+  const result = calculateScore(userAnswer, kp.content, kp.keywords);
+  const correct = result.totalScore >= 50;
+  updateCombo(correct);
+  if (correct) {
+    updateHP(Math.floor(Math.random() * 11) + 5);
+  } else {
+    updateHP(-(Math.floor(Math.random() * 16) + 5));
+  }
+  navigateTo('page-challenge-result', result);
+}
+
+function nextChallengeLevel() {
+  const currentLevel = state.challengeState.currentLevel;
+  const nextLevel = state.challengeState.levels.find(l => l.levelId > currentLevel && l.levelId <= state.challengeState.unlockedUpTo);
+  if (nextLevel) {
+    startChallenge(nextLevel.type, nextLevel.levelId);
+  } else {
+    showToast('恭喜！已通过所有已解锁关卡');
+    navigateTo('page-challenge-hall');
+  }
+}
+
+function finishVoiceRecording() {
+  if (isRecording) {
+    isRecording = false;
+    clearInterval(voiceTimerInterval);
+    const btn = document.getElementById('mic-button');
+    if (btn) btn.classList.remove('recording');
+  }
+  simulateVoiceResult();
+  showToast('语音背诵已提交');
+  navigateTo('page-recall-result');
+}
+
 function toggleNode(el) {
   const node = el.closest('.tree-node');
   if (!node) return;
@@ -1103,92 +1159,6 @@ function regenerateScene() {
 
 function favoriteScene() {
   showToast('已收藏');
-}
-
-function submitChallengeFill() {
-  stopTimer();
-  const kp = knowledgePoints[0];
-  const inputs = document.querySelectorAll('#page-challenge-fill .blank-input');
-  let userAnswer = '';
-  if (inputs.length > 0) {
-    userAnswer = Array.from(inputs).map(i => i.value).join('，');
-  }
-  const result = calculateScore(userAnswer, kp.content, kp.keywords);
-  const correct = result.totalScore >= 50;
-  updateCombo(correct);
-  if (correct) {
-    updateHP(Math.floor(Math.random() * 11) + 5);
-  } else {
-    updateHP(-(Math.floor(Math.random() * 16) + 5));
-  }
-  navigateTo('page-challenge-result', result);
-}
-
-function showChallengeHint() {
-  const kp = knowledgePoints[0];
-  showToast('提示：' + kp.keywords[0]);
-}
-
-function submitChallengeRecite() {
-  stopTimer();
-  const kp = knowledgePoints[0];
-  const textarea = document.querySelector('#page-challenge-recite textarea');
-  let userAnswer = textarea ? textarea.value : '';
-  const result = calculateScore(userAnswer, kp.content, kp.keywords);
-  const correct = result.totalScore >= 50;
-  updateCombo(correct);
-  if (correct) {
-    updateHP(Math.floor(Math.random() * 11) + 5);
-  } else {
-    updateHP(-(Math.floor(Math.random() * 16) + 5));
-  }
-  navigateTo('page-challenge-result', result);
-}
-
-function submitChallengeBlind() {
-  stopTimer();
-  const kp = knowledgePoints[0];
-  const textarea = document.querySelector('#page-challenge-blind textarea');
-  let userAnswer = textarea ? textarea.value : '';
-  const result = calculateScore(userAnswer, kp.content, kp.keywords);
-  const correct = result.totalScore >= 50;
-  updateCombo(correct);
-  if (correct) {
-    updateHP(Math.floor(Math.random() * 11) + 5);
-  } else {
-    updateHP(-(Math.floor(Math.random() * 16) + 5));
-  }
-  navigateTo('page-challenge-result', result);
-}
-
-function submitReorder() {
-  stopTimer();
-  const kp = knowledgePoints[0];
-  const items = document.querySelectorAll('#reorder-list .reorder-item');
-  let userAnswer = Array.from(items).map(item => {
-    const textEl = item.querySelector('.reorder-text');
-    return textEl ? textEl.textContent : '';
-  }).join('，');
-  const result = calculateScore(userAnswer, kp.content, kp.keywords);
-  const correct = result.totalScore >= 50;
-  updateCombo(correct);
-  if (correct) {
-    updateHP(Math.floor(Math.random() * 11) + 5);
-  } else {
-    updateHP(-(Math.floor(Math.random() * 16) + 5));
-  }
-  navigateTo('page-challenge-result', result);
-}
-
-function nextChallengeLevel() {
-  const currentLevel = state.challengeState.currentLevel;
-  const nextLevel = state.challengeState.levels.find(l => l.levelId > currentLevel && l.levelId <= state.challengeState.unlockedUpTo);
-  if (nextLevel) {
-    startChallenge(nextLevel.type, nextLevel.levelId);
-  } else {
-    showToast('恭喜！已通过所有已解锁关卡');
-    navigateTo('page-challenge-hall');
-  }
 }
 
 function switchChapter(index) {
@@ -1436,151 +1406,13 @@ function wechatLogin() {
   }, 1500);
 }
 
-let onbCurrentStep = 1;
-const onbTotalSteps = 4;
-let onbData = { identity: '', goal: '', exam: '', source: '' };
-
-function nextOnbStep() {
-  if (onbCurrentStep >= onbTotalSteps) return;
-  document.getElementById(`onb-step-${onbCurrentStep}`).classList.remove('active');
-  onbCurrentStep++;
-  const nextEl = document.getElementById(`onb-step-${onbCurrentStep}`);
-  if (nextEl) nextEl.classList.add('active');
-  document.getElementById('onb-step-num').textContent = `${onbCurrentStep}/${onbTotalSteps}`;
-  document.getElementById('onb-progress-bar').style.width = `${(onbCurrentStep/onbTotalSteps)*100}%`;
-  const nextBtn = document.getElementById('onb-next-btn');
-  if (onbCurrentStep === onbTotalSteps) {
-    nextBtn.textContent = '完成';
+function shuffleArray(arr) {
+  let shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  if (onbCurrentStep === 4) {
-    document.getElementById('memory-test-intro').style.display = '';
-  }
-}
-
-function selectIdentity(el, value) {
-  document.querySelectorAll('.identity-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  onbData.identity = value;
-}
-
-function selectGoal(el, value) {
-  document.querySelectorAll('.goal-item').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  onbData.goal = value;
-}
-
-function selectExam(el, value) {
-  document.querySelectorAll('.exam-chip').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  onbData.exam = value;
-}
-
-function selectSource(el) {
-  document.querySelectorAll('.source-item').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  onbData.source = el.querySelector('span').textContent;
-  setTimeout(() => { document.getElementById('memory-test-intro').style.display = ''; }, 300);
-}
-
-let memTimer = null;
-let memAnswer = '37194';
-
-function startMemoryTest() {
-  document.getElementById('memory-test-intro').style.display = 'none';
-  document.getElementById('memory-test-area').style.display = 'block';
-  let seconds = 10;
-  const timerEl = document.getElementById('test-timer');
-  memTimer = setInterval(() => {
-    seconds--;
-    timerEl.textContent = seconds;
-    if (seconds <= 0) {
-      clearInterval(memTimer);
-      document.getElementById('test-memorize').style.display = 'none';
-      document.getElementById('test-input').style.display = 'block';
-    }
-  }, 1000);
-}
-
-function submitMemoryTest() {
-  const answer = document.getElementById('memory-answer').value.replace(/\s/g, '');
-  const correct = answer === memAnswer || answer.length >= 4;
-  let score = correct ? Math.max(60, 100 - Math.abs(answer.length - 5) * 10) : Math.max(20, 50 - Math.abs(answer.length - 5) * 5);
-  score = Math.min(100, Math.max(0, score));
-  document.getElementById('test-input').style.display = 'none';
-  document.getElementById('test-result').style.display = 'block';
-  document.getElementById('mem-test-score').textContent = score;
-  const feedback = document.getElementById('mem-test-feedback');
-  if (score >= 80) feedback.textContent = '太棒了！你的瞬时记忆力很出色，配合 Memora 的结构化记忆方法，效率会更高！🎉';
-  else if (score >= 50) feedback.textContent = '还不错！Memora 的提取式记忆训练可以帮你进一步提升。坚持练习！💪';
-  else feedback.textContent = '别担心！记忆力就像肌肉，越练越强。Memora 会帮你科学训练！🧠';
-}
-
-function finishOnboarding() {
-  navigateTo('page-books');
-}
-
-function toggleSuggestions() {
-  const body = document.getElementById('suggestions-body');
-  const toggle = document.getElementById('suggest-toggle');
-  if (body.style.display === 'block' || body.style.display === '') {
-    body.style.display = 'none';
-    toggle.textContent = '展开';
-  } else {
-    body.style.display = 'block';
-    toggle.textContent = '收起';
-  }
-}
-
-function quickAsk(type) {
-  navigateTo('page-ai');
-  setTimeout(() => {
-    const input = document.querySelector('#page-ai .ai-input');
-    if (input) {
-      const prompts = { today: '今天的背诵计划是什么？', weak: '我的薄弱知识点有哪些？', mnemonic: '帮我生成一个记忆口诀', motivation: '给我一些鼓励的话' };
-      input.value = prompts[type] || '';
-      sendCompanionMsg();
-    }
-  }, 300);
-}
-
-function sendAiTag(text) {
-  const input = document.getElementById('ai-companion-input');
-  if (input) { input.value = text; sendCompanionMsg(); }
-}
-
-function sendCompanionMsg() {
-  const input = document.getElementById('ai-companion-input');
-  if (!input || !input.value.trim()) return;
-  addCompanionBubble(input.value, 'user');
-  input.value = '';
-  setTimeout(() => {
-    const responses = [
-      '这个问题很好！让我从记忆科学的角度来分析...',
-      '根据艾宾浩斯遗忘曲线，现在复习效果最好！',
-      '我建议用「关键词联想法」来记这个知识点。',
-      '你已经连续学习了 23 天，太厉害了！继续保持 💪'
-    ];
-    addCompanionBubble(responses[Math.floor(Math.random() * responses.length)], 'ai');
-  }, 800);
-}
-
-function addCompanionBubble(text, type) {
-  const container = document.querySelector('.ai-conversation');
-  if (!container) return;
-  const bubble = document.createElement('div');
-  bubble.className = type === 'user' ? 'user-msg-bubble' : 'ai-msg-bubble';
-  if (type === 'user') {
-    bubble.innerHTML = `<div class="user-msg-text">${text}</div>`;
-  } else {
-    bubble.innerHTML = `<div class="ai-msg-avatar">AI</div><div class="ai-msg-text">${text}</div>`;
-  }
-  container.appendChild(bubble);
-  container.scrollTop = container.scrollHeight;
-}
-
-function switchDataPeriod(el, period) {
-  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  return shuffled;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
