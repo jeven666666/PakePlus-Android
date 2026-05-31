@@ -74,6 +74,9 @@ var MinerUClient = class {
     await (0, import_obsidian.requestUrl)({
       url: uploadUrl,
       method: "PUT",
+      headers: {
+        "Content-Type": "application/pdf"
+      },
       body: fileData
     });
   }
