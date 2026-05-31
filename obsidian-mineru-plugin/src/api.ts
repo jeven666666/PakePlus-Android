@@ -62,21 +62,15 @@ export class MinerUClient {
 	}
 
 	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
-			const xhr = new XMLHttpRequest();
-			xhr.open("PUT", uploadUrl, true);
-			xhr.onload = () => {
-				if (xhr.status >= 200 && xhr.status < 300) {
-					resolve();
-				} else {
-					reject(new Error(`上传失败: HTTP ${xhr.status} ${xhr.statusText}`));
-				}
-			};
-			xhr.onerror = () => {
-				reject(new Error("上传失败: 网络错误"));
-			};
-			xhr.send(fileData);
+		const response = await requestUrl({
+			url: uploadUrl,
+			method: "PUT",
+			body: fileData,
+			throw: false,
 		});
+		if (response.status >= 400) {
+			throw new Error(`上传失败: HTTP ${response.status}`);
+		}
 	}
 
 	async createTask(fileUrl: string, dataId?: string): Promise<string> {

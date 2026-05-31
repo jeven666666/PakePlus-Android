@@ -71,21 +71,15 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("PUT", uploadUrl, true);
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${xhr.status} ${xhr.statusText}`));
-        }
-      };
-      xhr.onerror = () => {
-        reject(new Error("\u4E0A\u4F20\u5931\u8D25: \u7F51\u7EDC\u9519\u8BEF"));
-      };
-      xhr.send(fileData);
+    const response = await (0, import_obsidian.requestUrl)({
+      url: uploadUrl,
+      method: "PUT",
+      body: fileData,
+      throw: false
     });
+    if (response.status >= 400) {
+      throw new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${response.status}`);
+    }
   }
   async createTask(fileUrl, dataId) {
     const body = {
