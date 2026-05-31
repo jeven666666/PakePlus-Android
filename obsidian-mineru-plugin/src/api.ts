@@ -61,60 +61,36 @@ export class MinerUClient {
 		};
 	}
 
-	async uploadFile(uploadUrl: string, fileData: ArrayBuffer | Uint8Array): Promise<void> {
-		// Use Node.js native modules directly (esbuild marks builtin-modules as external)
-		const https = require("https");
-		const NodeBuffer = require("buffer").Buffer;
-		const urlMod = require("url");
-
-		const parsed = urlMod.parse(uploadUrl);
-
-		return new Promise<void>((resolve, reject) => {
-			// Convert to Node Buffer properly
-			let buffer: any;
-			if (fileData instanceof Uint8Array) {
-				buffer = NodeBuffer.from(fileData);
-			} else {
-				const view = new Uint8Array(fileData);
-				buffer = NodeBuffer.from(view.buffer, view.byteOffset, view.byteLength);
-			}
-
-			const options = {
-				hostname: parsed.hostname,
-				port: parsed.port || 443,
-				path: uploadUrl.replace(/^https?:\/\/[^\/]+/, ""),
-				method: "PUT",
-				headers: {
-					"Content-Length": buffer.length,
-				},
-				timeout: 120000,
-			};
-
-			const req = https.request(options, (res: any) => {
-				const chunks: any[] = [];
-				res.on("data", (chunk: any) => chunks.push(chunk));
-				res.on("end", () => {
-					if (res.statusCode >= 200 && res.statusCode < 300) {
-						resolve();
-					} else {
-						const body = NodeBuffer.concat(chunks).toString("utf8");
-						reject(new Error(`上传失败: HTTP ${res.statusCode} - ${body.substring(0, 300)}`));
-					}
-				});
-			});
-
-			req.on("error", (err: Error) => {
-				reject(new Error(`上传失败: ${err.message}`));
-			});
-
-			req.on("timeout", () => {
-				req.destroy();
-				reject(new Error("上传超时"));
-			});
-
-			req.write(buffer);
-			req.end();
+	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
+		const response = await requestUrl({
+			url: uploadUrl,
+			method: "PUT",
+			body: fileData,
 		});
+		if (response.status >= 400) {
+			throw new Error(`上传失败: HTTP ${response.status}`);
+		}
+	}
+
+	async createTask(fileUrl: string, dataId?: string): Promise<string> {
+		const body: Record<string, any> = {
+			url: fileUrl,
+			model_version: this.settings.modelVersion,
+			is_ocr: this.settings.isOcr,
+			enable_formula: this.settings.enableFormula,
+			enable_table: this.settings.enableTable,
+			language: this.settings.language,
+		};
+		if (dataId) {
+			body.data_id = dataId;
+		}
+		const data = await this.request({
+			url: `${BASE_URL}/api/v4/extract/task`,
+			method: "POST",
+			headers: this.headers,
+			body: JSON.stringify(body),
+		});
+		return data.data.task_id;
 	}
 
 	async getTaskResult(taskId: string): Promise<TaskResult> {
@@ -124,10 +100,6 @@ export class MinerUClient {
 			headers: this.headers,
 		});
 		return data.data;
-	}
-
-	async getBatchResult(batchId: string): Promise<TaskResult> {
-		return this.getTaskResult(batchId);
 	}
 
 	async waitForTask(
