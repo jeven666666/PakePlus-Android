@@ -1,0 +1,76 @@
+.mineru-progress-modal {
+	padding: 20px;
+}
+
+.mineru-progress-list {
+	max-height: 400px;
+	overflow-y: auto;
+	margin: 10px 0;
+}
+
+.mineru-progress-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.mineru-progress-item:hover {
+	background-color: var(--background-secondary);
+}
+
+.mineru-progress-name {
+	font-size: 14px;
+	color: var(--text-normal);
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-right: 16px;
+}
+
+.mineru-progress-status {
+	font-size: 12px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.mineru-status-pending {
+	color: var(--text-muted);
+}
+
+.mineru-status-uploading {
+	color: var(--text-accent);
+}
+
+.mineru-status-processing {
+	color: var(--text-accent);
+}
+
+.mineru-status-done {
+	color: var(--text-success);
+}
+
+.mineru-status-failed {
+	color: var(--text-error);
+}
+
+.mineru-progress-summary {
+	margin-top: 16px;
+	padding: 12px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 14px;
+	border-top: 2px solid var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+.mineru-pdf-select-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 10px 0;
+	border-top: 1px solid var(--background-modifier-border);
+}

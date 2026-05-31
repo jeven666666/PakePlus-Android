@@ -1,0 +1,9 @@
+{
+	"id": "obsidian-mineru",
+	"name": "MinerU PDF Converter",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Convert PDF files to Markdown using MinerU API, with batch support.",
+	"author": "You",
+	"isDesktopOnly": true
+}
