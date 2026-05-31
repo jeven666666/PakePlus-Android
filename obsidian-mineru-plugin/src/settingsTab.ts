@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type MinerUPlugin from "../main";
 import type { MinerUSettings } from "./settings";
 
@@ -26,6 +26,35 @@ export class MinerUSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.apiToken = value;
 						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("测试连接")
+			.setDesc("验证 API Token 是否有效，点击后查看结果")
+			.addButton((button) =>
+				button
+					.setButtonText("测试连接")
+					.onClick(async () => {
+						if (!this.plugin.settings.apiToken) {
+							new Notice("请先填写 API Token");
+							return;
+						}
+						button.setDisabled(true);
+						button.setButtonText("测试中...");
+						try {
+							const result = await this.plugin.client.testConnection();
+							if (result.success) {
+								new Notice(`✅ ${result.message}`);
+							} else {
+								new Notice(`❌ ${result.message}`);
+							}
+						} catch (err: any) {
+							new Notice(`❌ 测试异常: ${err.message}`);
+						} finally {
+							button.setDisabled(false);
+							button.setButtonText("测试连接");
+						}
 					})
 			);
 

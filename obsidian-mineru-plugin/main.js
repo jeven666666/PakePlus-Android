@@ -50,6 +50,22 @@ var MinerUClient = class {
     }
     return data;
   }
+  async testConnection() {
+    try {
+      const data = await this.request({
+        url: `${BASE_URL}/api/v4/file-urls/batch`,
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify({
+          files: [{ name: "test.pdf" }],
+          model_version: "vlm"
+        })
+      });
+      return { success: true, message: `\u8FDE\u63A5\u6210\u529F! batch_id: ${data.data.batch_id}` };
+    } catch (err) {
+      return { success: false, message: `\u8FDE\u63A5\u5931\u8D25: ${err.message}` };
+    }
+  }
   async batchUpload(fileNames) {
     const files = fileNames.map((name) => ({ name }));
     const data = await this.request({
@@ -71,16 +87,73 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
-    const response = await (0, import_obsidian.requestUrl)({
-      url: uploadUrl,
-      method: "PUT",
-      body: fileData
-    });
-    if (response.status >= 400) {
-      throw new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${response.status}`);
+    console.log("[MinerU] \u5F00\u59CB\u4E0A\u4F20\u6587\u4EF6...");
+    console.log(`[MinerU] \u4E0A\u4F20 URL: ${uploadUrl.substring(0, 80)}...`);
+    console.log(`[MinerU] \u6587\u4EF6\u5927\u5C0F: ${fileData.byteLength} bytes`);
+    let httpsMod;
+    try {
+      httpsMod = require("https");
+      console.log("[MinerU] https \u6A21\u5757\u52A0\u8F7D\u6210\u529F");
+    } catch (e) {
+      console.error("[MinerU] https \u6A21\u5757\u52A0\u8F7D\u5931\u8D25\uFF0C\u56DE\u9000\u5230 requestUrl:", e);
+      const response = await (0, import_obsidian.requestUrl)({
+        url: uploadUrl,
+        method: "PUT",
+        body: fileData
+      });
+      if (response.status >= 400) {
+        throw new Error(`\u4E0A\u4F20\u5931\u8D25(requestUrl): HTTP ${response.status}`);
+      }
+      console.log(`[MinerU] requestUrl \u4E0A\u4F20\u6210\u529F, \u72B6\u6001\u7801: ${response.status}`);
+      return;
     }
+    const NodeBuffer = require("buffer").Buffer;
+    const urlObj = new URL(uploadUrl);
+    return new Promise((resolve, reject) => {
+      const view = new Uint8Array(fileData);
+      const buffer = NodeBuffer.from(view.buffer, view.byteOffset, view.byteLength);
+      console.log(`[MinerU] Buffer \u5927\u5C0F: ${buffer.length} bytes`);
+      const options = {
+        hostname: urlObj.hostname,
+        port: urlObj.port || 443,
+        path: urlObj.pathname + urlObj.search,
+        method: "PUT",
+        headers: {
+          "Content-Length": buffer.length
+        },
+        timeout: 12e4
+      };
+      console.log(`[MinerU] \u53D1\u9001 PUT \u8BF7\u6C42\u5230 ${urlObj.hostname}`);
+      const req = httpsMod.request(options, (res) => {
+        console.log(`[MinerU] \u6536\u5230\u54CD\u5E94: HTTP ${res.statusCode}`);
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          const body = NodeBuffer.concat(chunks).toString("utf8").substring(0, 200);
+          console.log(`[MinerU] \u54CD\u5E94\u4F53: ${body}`);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log("[MinerU] \u6587\u4EF6\u4E0A\u4F20\u6210\u529F!");
+            resolve();
+          } else {
+            reject(new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${res.statusCode} - ${body}`));
+          }
+        });
+      });
+      req.on("error", (err) => {
+        console.error(`[MinerU] \u4E0A\u4F20\u8BF7\u6C42\u9519\u8BEF: ${err.message}`);
+        reject(new Error(`\u4E0A\u4F20\u5931\u8D25: ${err.message}`));
+      });
+      req.on("timeout", () => {
+        console.error("[MinerU] \u4E0A\u4F20\u8D85\u65F6!");
+        req.destroy();
+        reject(new Error("\u4E0A\u4F20\u8D85\u65F6"));
+      });
+      req.write(buffer);
+      req.end();
+    });
   }
   async createTask(fileUrl, dataId) {
+    console.log(`[MinerU] \u521B\u5EFA\u4EFB\u52A1, URL: ${fileUrl.substring(0, 60)}...`);
     const body = {
       url: fileUrl,
       model_version: this.settings.modelVersion,
@@ -98,6 +171,7 @@ var MinerUClient = class {
       headers: this.headers,
       body: JSON.stringify(body)
     });
+    console.log(`[MinerU] \u4EFB\u52A1\u521B\u5EFA\u6210\u529F, task_id: ${data.data.task_id}`);
     return data.data.task_id;
   }
   async getTaskResult(taskId) {
@@ -113,6 +187,7 @@ var MinerUClient = class {
       const poll = async () => {
         try {
           const result = await this.getTaskResult(taskId);
+          console.log(`[MinerU] \u4EFB\u52A1\u72B6\u6001: ${result.state}`);
           if (result.state === "done") {
             resolve(result);
             return;
@@ -170,6 +245,29 @@ var MinerUSettingTab = class extends import_obsidian2.PluginSettingTab {
       (text) => text.setPlaceholder("\u8F93\u5165\u4F60\u7684 MinerU API Token").setValue(this.plugin.settings.apiToken).onChange(async (value) => {
         this.plugin.settings.apiToken = value;
         await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian2.Setting(containerEl).setName("\u6D4B\u8BD5\u8FDE\u63A5").setDesc("\u9A8C\u8BC1 API Token \u662F\u5426\u6709\u6548\uFF0C\u70B9\u51FB\u540E\u67E5\u770B\u7ED3\u679C").addButton(
+      (button) => button.setButtonText("\u6D4B\u8BD5\u8FDE\u63A5").onClick(async () => {
+        if (!this.plugin.settings.apiToken) {
+          new import_obsidian2.Notice("\u8BF7\u5148\u586B\u5199 API Token");
+          return;
+        }
+        button.setDisabled(true);
+        button.setButtonText("\u6D4B\u8BD5\u4E2D...");
+        try {
+          const result = await this.plugin.client.testConnection();
+          if (result.success) {
+            new import_obsidian2.Notice(`\u2705 ${result.message}`);
+          } else {
+            new import_obsidian2.Notice(`\u274C ${result.message}`);
+          }
+        } catch (err) {
+          new import_obsidian2.Notice(`\u274C \u6D4B\u8BD5\u5F02\u5E38: ${err.message}`);
+        } finally {
+          button.setDisabled(false);
+          button.setButtonText("\u6D4B\u8BD5\u8FDE\u63A5");
+        }
       })
     );
     new import_obsidian2.Setting(containerEl).setName("\u6A21\u578B\u7248\u672C").setDesc("pipeline: \u9ED8\u8BA4\u6A21\u578B; vlm: \u63A8\u8350\u6A21\u578B(\u66F4\u51C6\u786E); MinerU-HTML: HTML\u6587\u4EF6\u4E13\u7528").addDropdown(
@@ -384,6 +482,11 @@ var MinerUPlugin = class extends import_obsidian5.Plugin {
     await this.loadSettings();
     this.client = new MinerUClient(this.settings);
     this.addCommand({
+      id: "mineru-test-connection",
+      name: "\u6D4B\u8BD5 MinerU API \u8FDE\u63A5",
+      callback: () => this.testConnection()
+    });
+    this.addCommand({
       id: "mineru-convert-selected-pdf",
       name: "\u8F6C\u6362\u9009\u4E2D\u7684 PDF \u6587\u4EF6",
       callback: () => this.convertSelectedPdfs()
@@ -429,6 +532,24 @@ var MinerUPlugin = class extends import_obsidian5.Plugin {
       return false;
     }
     return true;
+  }
+  async testConnection() {
+    if (!this.validateToken())
+      return;
+    new import_obsidian5.Notice("\u6B63\u5728\u6D4B\u8BD5\u8FDE\u63A5...");
+    try {
+      const result = await this.client.testConnection();
+      if (result.success) {
+        new import_obsidian5.Notice(`\u2705 ${result.message}`);
+        console.log("[MinerU] \u6D4B\u8BD5\u8FDE\u63A5\u6210\u529F:", result.message);
+      } else {
+        new import_obsidian5.Notice(`\u274C ${result.message}`);
+        console.error("[MinerU] \u6D4B\u8BD5\u8FDE\u63A5\u5931\u8D25:", result.message);
+      }
+    } catch (err) {
+      new import_obsidian5.Notice(`\u274C \u6D4B\u8BD5\u5F02\u5E38: ${err.message}`);
+      console.error("[MinerU] \u6D4B\u8BD5\u8FDE\u63A5\u5F02\u5E38:", err);
+    }
   }
   async ensureOutputFolder() {
     const folderPath = this.settings.outputFolder;

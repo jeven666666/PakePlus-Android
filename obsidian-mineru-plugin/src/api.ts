@@ -40,6 +40,23 @@ export class MinerUClient {
 		return data;
 	}
 
+	async testConnection(): Promise<{ success: boolean; message: string }> {
+		try {
+			const data = await this.request({
+				url: `${BASE_URL}/api/v4/file-urls/batch`,
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({
+					files: [{ name: "test.pdf" }],
+					model_version: "vlm",
+				}),
+			});
+			return { success: true, message: `连接成功! batch_id: ${data.data.batch_id}` };
+		} catch (err: any) {
+			return { success: false, message: `连接失败: ${err.message}` };
+		}
+	}
+
 	async batchUpload(fileNames: string[]): Promise<BatchUploadResult> {
 		const files = fileNames.map((name) => ({ name }));
 		const data = await this.request({
@@ -62,17 +79,85 @@ export class MinerUClient {
 	}
 
 	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
-		const response = await requestUrl({
-			url: uploadUrl,
-			method: "PUT",
-			body: fileData,
-		});
-		if (response.status >= 400) {
-			throw new Error(`上传失败: HTTP ${response.status}`);
+		console.log("[MinerU] 开始上传文件...");
+		console.log(`[MinerU] 上传 URL: ${uploadUrl.substring(0, 80)}...`);
+		console.log(`[MinerU] 文件大小: ${fileData.byteLength} bytes`);
+
+		let httpsMod: any;
+		try {
+			httpsMod = require("https");
+			console.log("[MinerU] https 模块加载成功");
+		} catch (e) {
+			console.error("[MinerU] https 模块加载失败，回退到 requestUrl:", e);
+			const response = await requestUrl({
+				url: uploadUrl,
+				method: "PUT",
+				body: fileData,
+			});
+			if (response.status >= 400) {
+				throw new Error(`上传失败(requestUrl): HTTP ${response.status}`);
+			}
+			console.log(`[MinerU] requestUrl 上传成功, 状态码: ${response.status}`);
+			return;
 		}
+
+		const NodeBuffer = require("buffer").Buffer;
+
+		const urlObj = new URL(uploadUrl);
+
+		return new Promise<void>((resolve, reject) => {
+			const view = new Uint8Array(fileData);
+			const buffer = NodeBuffer.from(view.buffer, view.byteOffset, view.byteLength);
+
+			console.log(`[MinerU] Buffer 大小: ${buffer.length} bytes`);
+
+			const options = {
+				hostname: urlObj.hostname,
+				port: urlObj.port || 443,
+				path: urlObj.pathname + urlObj.search,
+				method: "PUT",
+				headers: {
+					"Content-Length": buffer.length,
+				},
+				timeout: 120000,
+			};
+
+			console.log(`[MinerU] 发送 PUT 请求到 ${urlObj.hostname}`);
+
+			const req = httpsMod.request(options, (res: any) => {
+				console.log(`[MinerU] 收到响应: HTTP ${res.statusCode}`);
+				const chunks: any[] = [];
+				res.on("data", (chunk: any) => chunks.push(chunk));
+				res.on("end", () => {
+					const body = NodeBuffer.concat(chunks).toString("utf8").substring(0, 200);
+					console.log(`[MinerU] 响应体: ${body}`);
+					if (res.statusCode >= 200 && res.statusCode < 300) {
+						console.log("[MinerU] 文件上传成功!");
+						resolve();
+					} else {
+						reject(new Error(`上传失败: HTTP ${res.statusCode} - ${body}`));
+					}
+				});
+			});
+
+			req.on("error", (err: Error) => {
+				console.error(`[MinerU] 上传请求错误: ${err.message}`);
+				reject(new Error(`上传失败: ${err.message}`));
+			});
+
+			req.on("timeout", () => {
+				console.error("[MinerU] 上传超时!");
+				req.destroy();
+				reject(new Error("上传超时"));
+			});
+
+			req.write(buffer);
+			req.end();
+		});
 	}
 
 	async createTask(fileUrl: string, dataId?: string): Promise<string> {
+		console.log(`[MinerU] 创建任务, URL: ${fileUrl.substring(0, 60)}...`);
 		const body: Record<string, any> = {
 			url: fileUrl,
 			model_version: this.settings.modelVersion,
@@ -90,6 +175,7 @@ export class MinerUClient {
 			headers: this.headers,
 			body: JSON.stringify(body),
 		});
+		console.log(`[MinerU] 任务创建成功, task_id: ${data.data.task_id}`);
 		return data.data.task_id;
 	}
 
@@ -110,6 +196,7 @@ export class MinerUClient {
 			const poll = async () => {
 				try {
 					const result = await this.getTaskResult(taskId);
+					console.log(`[MinerU] 任务状态: ${result.state}`);
 					if (result.state === "done") {
 						resolve(result);
 						return;

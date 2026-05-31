@@ -13,11 +13,17 @@ import { PdfSelectModal } from "./src/pdfSelectModal";
 
 export default class MinerUPlugin extends Plugin {
 	settings: MinerUSettings = DEFAULT_SETTINGS;
-	private client!: MinerUClient;
+	client: MinerUClient;
 
 	async onload() {
 		await this.loadSettings();
 		this.client = new MinerUClient(this.settings);
+
+		this.addCommand({
+			id: "mineru-test-connection",
+			name: "测试 MinerU API 连接",
+			callback: () => this.testConnection(),
+		});
 
 		this.addCommand({
 			id: "mineru-convert-selected-pdf",
@@ -76,6 +82,25 @@ export default class MinerUPlugin extends Plugin {
 			return false;
 		}
 		return true;
+	}
+
+	private async testConnection() {
+		if (!this.validateToken()) return;
+
+		new Notice("正在测试连接...");
+		try {
+			const result = await this.client.testConnection();
+			if (result.success) {
+				new Notice(`✅ ${result.message}`);
+				console.log("[MinerU] 测试连接成功:", result.message);
+			} else {
+				new Notice(`❌ ${result.message}`);
+				console.error("[MinerU] 测试连接失败:", result.message);
+			}
+		} catch (err: any) {
+			new Notice(`❌ 测试异常: ${err.message}`);
+			console.error("[MinerU] 测试连接异常:", err);
+		}
 	}
 
 	private async ensureOutputFolder(): Promise<TFolder | null> {
