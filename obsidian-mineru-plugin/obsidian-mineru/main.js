@@ -532,8 +532,20 @@ var MinerUPlugin = class extends import_obsidian5.Plugin {
         const validIndices = batchIndices.filter(
           (_, i) => batch[i] !== null
         );
-        const pollPromises = validItems.map((item, i) => {
+        const taskPromises = validItems.map(async (item, i) => {
           const globalIndex = validIndices[i];
+          const uploadUrl = uploadResult.file_urls[validIndices[i] - batchStart];
+          try {
+            const taskId = await this.client.createTask(uploadUrl);
+            return { taskId, item, globalIndex };
+          } catch (err) {
+            modal.markFailed(globalIndex, `\u521B\u5EFA\u4EFB\u52A1\u5931\u8D25: ${err.message}`);
+            return null;
+          }
+        });
+        const taskResults = await Promise.all(taskPromises);
+        const validTasks = taskResults.filter((t) => t !== null);
+        const pollPromises = validTasks.map(({ taskId, item, globalIndex }) => {
           modal.updateItem(globalIndex, {
             status: "processing",
             progress: "\u2699\uFE0F \u7B49\u5F85\u5904\u7406..."
@@ -549,12 +561,10 @@ var MinerUPlugin = class extends import_obsidian5.Plugin {
                   return;
                 }
                 try {
-                  const batchResult = await this.client.getTaskResult(
-                    uploadResult.batch_id
-                  );
-                  if (batchResult.state === "done" && batchResult.full_zip_url) {
+                  const taskResult = await this.client.getTaskResult(taskId);
+                  if (taskResult.state === "done" && taskResult.full_zip_url) {
                     await this.downloadAndSave(
-                      batchResult.full_zip_url,
+                      taskResult.full_zip_url,
                       item.fileName,
                       outputFolder
                     );
@@ -565,15 +575,15 @@ var MinerUPlugin = class extends import_obsidian5.Plugin {
                     resolve();
                     return;
                   }
-                  if (batchResult.state === "failed") {
+                  if (taskResult.state === "failed") {
                     modal.markFailed(
                       globalIndex,
-                      batchResult.err_msg || "\u5904\u7406\u5931\u8D25"
+                      taskResult.err_msg || "\u5904\u7406\u5931\u8D25"
                     );
                     resolve();
                     return;
                   }
-                  modal.updateProgress(globalIndex, batchResult);
+                  modal.updateProgress(globalIndex, taskResult);
                   setTimeout(poll, this.settings.pollInterval);
                 } catch (err) {
                   modal.markFailed(globalIndex, err.message);

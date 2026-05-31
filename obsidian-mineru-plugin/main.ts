@@ -198,8 +198,23 @@ export default class MinerUPlugin extends Plugin {
 					(_, i) => batch[i] !== null
 				);
 
-				const pollPromises = validItems.map((item, i) => {
+				// 为每个成功上传的文件创建任务
+				const taskPromises = validItems.map(async (item, i) => {
 					const globalIndex = validIndices[i];
+					const uploadUrl = uploadResult.file_urls[validIndices[i] - batchStart];
+					try {
+						const taskId = await this.client.createTask(uploadUrl);
+						return { taskId, item, globalIndex };
+					} catch (err) {
+						modal.markFailed(globalIndex, `创建任务失败: ${err.message}`);
+						return null;
+					}
+				});
+
+				const taskResults = await Promise.all(taskPromises);
+				const validTasks = taskResults.filter((t): t is NonNullable<typeof t> => t !== null);
+
+				const pollPromises = validTasks.map(({ taskId, item, globalIndex }) => {
 					modal.updateItem(globalIndex, {
 						status: "processing",
 						progress: "⚙️ 等待处理...",
@@ -218,13 +233,11 @@ export default class MinerUPlugin extends Plugin {
 								}
 
 								try {
-									const batchResult = await this.client.getTaskResult(
-										uploadResult.batch_id
-									);
+									const taskResult = await this.client.getTaskResult(taskId);
 
-									if (batchResult.state === "done" && batchResult.full_zip_url) {
+									if (taskResult.state === "done" && taskResult.full_zip_url) {
 										await this.downloadAndSave(
-											batchResult.full_zip_url,
+											taskResult.full_zip_url,
 											item.fileName,
 											outputFolder
 										);
@@ -237,16 +250,16 @@ export default class MinerUPlugin extends Plugin {
 										return;
 									}
 
-									if (batchResult.state === "failed") {
+									if (taskResult.state === "failed") {
 										modal.markFailed(
 											globalIndex,
-											batchResult.err_msg || "处理失败"
+											taskResult.err_msg || "处理失败"
 										);
 										resolve();
 										return;
 									}
 
-									modal.updateProgress(globalIndex, batchResult);
+									modal.updateProgress(globalIndex, taskResult);
 									setTimeout(poll, this.settings.pollInterval);
 								} catch (err) {
 									modal.markFailed(globalIndex, err.message);
