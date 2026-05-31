@@ -65,9 +65,6 @@ export class MinerUClient {
 		await requestUrl({
 			url: uploadUrl,
 			method: "PUT",
-			headers: {
-				"Content-Type": "application/pdf",
-			},
 			body: fileData,
 		});
 	}
