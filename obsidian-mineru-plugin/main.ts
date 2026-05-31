@@ -198,84 +198,79 @@ export default class MinerUPlugin extends Plugin {
 					(_, i) => batch[i] !== null
 				);
 
-				// 为每个成功上传的文件创建任务
-				const taskPromises = validItems.map(async (item, i) => {
-					const globalIndex = validIndices[i];
-					const uploadUrl = uploadResult.file_urls[validIndices[i] - batchStart];
-					try {
-						const taskId = await this.client.createTask(uploadUrl);
-						return { taskId, item, globalIndex };
-					} catch (err) {
-						modal.markFailed(globalIndex, `创建任务失败: ${err.message}`);
-						return null;
-					}
+				// MinerU batch upload auto-creates tasks, use batch_id as task_id to poll
+				modal.updateItem(validIndices[0], {
+					status: "processing",
+					progress: "⚙️ 等待处理...",
 				});
 
-				const taskResults = await Promise.all(taskPromises);
-				const validTasks = taskResults.filter((t): t is NonNullable<typeof t> => t !== null);
+				try {
+					const maxWaitTime = 10 * 60 * 1000;
+					const startTime = Date.now();
 
-				const pollPromises = validTasks.map(({ taskId, item, globalIndex }) => {
-					modal.updateItem(globalIndex, {
-						status: "processing",
-						progress: "⚙️ 等待处理...",
-					});
+					await new Promise<void>((resolve, reject) => {
+						const poll = async () => {
+							if (Date.now() - startTime > maxWaitTime) {
+								for (const idx of validIndices) {
+									modal.markFailed(idx, "超时（10分钟）");
+								}
+								resolve();
+								return;
+							}
 
-					return new Promise<void>(async (resolve) => {
-						try {
-							const maxWaitTime = 10 * 60 * 1000;
-							const startTime = Date.now();
+							try {
+								const batchResult = await this.client.getBatchResult(uploadResult.batch_id);
 
-							const poll = async () => {
-								if (Date.now() - startTime > maxWaitTime) {
-									modal.markFailed(globalIndex, "超时（10分钟）");
+								if (batchResult.state === "done" && batchResult.full_zip_url) {
+									// Download and save for all valid items
+									for (let i = 0; i < validItems.length; i++) {
+										const item = validItems[i];
+										const idx = validIndices[i];
+										try {
+											await this.downloadAndSave(
+												batchResult.full_zip_url,
+												item.fileName,
+												outputFolder
+											);
+											modal.markDone(idx);
+											if (this.settings.deletePdfAfterConvert) {
+												await this.app.vault.delete(item.file);
+											}
+										} catch (err) {
+											modal.markFailed(idx, `保存失败: ${err.message}`);
+										}
+									}
 									resolve();
 									return;
 								}
 
-								try {
-									const taskResult = await this.client.getTaskResult(taskId);
-
-									if (taskResult.state === "done" && taskResult.full_zip_url) {
-										await this.downloadAndSave(
-											taskResult.full_zip_url,
-											item.fileName,
-											outputFolder
-										);
-										modal.markDone(globalIndex);
-
-										if (this.settings.deletePdfAfterConvert) {
-											await this.app.vault.delete(item.file);
-										}
-										resolve();
-										return;
+								if (batchResult.state === "failed") {
+									for (const idx of validIndices) {
+										modal.markFailed(idx, batchResult.err_msg || "处理失败");
 									}
-
-									if (taskResult.state === "failed") {
-										modal.markFailed(
-											globalIndex,
-											taskResult.err_msg || "处理失败"
-										);
-										resolve();
-										return;
-									}
-
-									modal.updateProgress(globalIndex, taskResult);
-									setTimeout(poll, this.settings.pollInterval);
-								} catch (err) {
-									modal.markFailed(globalIndex, err.message);
 									resolve();
+									return;
 								}
-							};
 
-							poll();
-						} catch (err) {
-							modal.markFailed(globalIndex, err.message);
-							resolve();
-						}
+								// Update progress for all valid items
+								for (const idx of validIndices) {
+									modal.updateProgress(idx, batchResult);
+								}
+								setTimeout(poll, this.settings.pollInterval);
+							} catch (err) {
+								for (const idx of validIndices) {
+									modal.markFailed(idx, err.message);
+								}
+								resolve();
+							}
+						};
+						poll();
 					});
-				});
-
-				await Promise.all(pollPromises);
+				} catch (err) {
+					for (const idx of validIndices) {
+						modal.markFailed(idx, err.message);
+					}
+				}
 			} catch (err) {
 				for (const idx of batchIndices) {
 					modal.markFailed(idx, `批量操作失败: ${err.message}`);

@@ -71,19 +71,27 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
-    const https = require("https");
-    const NodeBuffer = require("buffer").Buffer;
-    const urlObj = new URL(uploadUrl);
+    const electron = require("electron");
+    const remote = electron.remote || electron;
+    if (!remote) {
+      throw new Error("\u65E0\u6CD5\u52A0\u8F7D electron.remote \u6A21\u5757");
+    }
+    const NodeBuffer = remote.require("buffer").Buffer;
+    const https = remote.require("https");
+    const urlMod = remote.require("url");
+    const parsed = urlMod.parse(uploadUrl);
     return new Promise((resolve, reject) => {
-      const buffer = NodeBuffer.alloc(fileData.byteLength);
-      const view = new Uint8Array(fileData);
-      for (let i = 0; i < view.length; i++) {
-        buffer[i] = view[i];
+      let buffer;
+      if (fileData instanceof Uint8Array) {
+        buffer = NodeBuffer.from(fileData);
+      } else {
+        const view = new Uint8Array(fileData);
+        buffer = NodeBuffer.from(view.buffer, view.byteOffset, view.byteLength);
       }
       const options = {
-        hostname: urlObj.hostname,
-        port: urlObj.port || 443,
-        path: urlObj.pathname + urlObj.search,
+        hostname: parsed.hostname,
+        port: parsed.port || 443,
+        path: uploadUrl.replace(/^https?:\/\/[^\/]+/, ""),
         method: "PUT",
         headers: {
           "Content-Length": buffer.length
@@ -113,26 +121,6 @@ var MinerUClient = class {
       req.end();
     });
   }
-  async createTask(fileUrl, dataId) {
-    const body = {
-      url: fileUrl,
-      model_version: this.settings.modelVersion,
-      is_ocr: this.settings.isOcr,
-      enable_formula: this.settings.enableFormula,
-      enable_table: this.settings.enableTable,
-      language: this.settings.language
-    };
-    if (dataId) {
-      body.data_id = dataId;
-    }
-    const data = await this.request({
-      url: `${BASE_URL}/api/v4/extract/task`,
-      method: "POST",
-      headers: this.headers,
-      body: JSON.stringify(body)
-    });
-    return data.data.task_id;
-  }
   async getTaskResult(taskId) {
     const data = await this.request({
       url: `${BASE_URL}/api/v4/extract/task/${taskId}`,
@@ -140,6 +128,9 @@ var MinerUClient = class {
       headers: this.headers
     });
     return data.data;
+  }
+  async getBatchResult(batchId) {
+    return this.getTaskResult(batchId);
   }
   async waitForTask(taskId, onProgress) {
     return new Promise((resolve, reject) => {
@@ -568,72 +559,70 @@ var MinerUPlugin = class extends import_obsidian5.Plugin {
         const validIndices = batchIndices.filter(
           (_, i) => batch[i] !== null
         );
-        const taskPromises = validItems.map(async (item, i) => {
-          const globalIndex = validIndices[i];
-          const uploadUrl = uploadResult.file_urls[validIndices[i] - batchStart];
-          try {
-            const taskId = await this.client.createTask(uploadUrl);
-            return { taskId, item, globalIndex };
-          } catch (err) {
-            modal.markFailed(globalIndex, `\u521B\u5EFA\u4EFB\u52A1\u5931\u8D25: ${err.message}`);
-            return null;
-          }
+        modal.updateItem(validIndices[0], {
+          status: "processing",
+          progress: "\u2699\uFE0F \u7B49\u5F85\u5904\u7406..."
         });
-        const taskResults = await Promise.all(taskPromises);
-        const validTasks = taskResults.filter((t) => t !== null);
-        const pollPromises = validTasks.map(({ taskId, item, globalIndex }) => {
-          modal.updateItem(globalIndex, {
-            status: "processing",
-            progress: "\u2699\uFE0F \u7B49\u5F85\u5904\u7406..."
-          });
-          return new Promise(async (resolve) => {
-            try {
-              const maxWaitTime = 10 * 60 * 1e3;
-              const startTime = Date.now();
-              const poll = async () => {
-                if (Date.now() - startTime > maxWaitTime) {
-                  modal.markFailed(globalIndex, "\u8D85\u65F6\uFF0810\u5206\u949F\uFF09");
+        try {
+          const maxWaitTime = 10 * 60 * 1e3;
+          const startTime = Date.now();
+          await new Promise((resolve, reject) => {
+            const poll = async () => {
+              if (Date.now() - startTime > maxWaitTime) {
+                for (const idx of validIndices) {
+                  modal.markFailed(idx, "\u8D85\u65F6\uFF0810\u5206\u949F\uFF09");
+                }
+                resolve();
+                return;
+              }
+              try {
+                const batchResult = await this.client.getBatchResult(uploadResult.batch_id);
+                if (batchResult.state === "done" && batchResult.full_zip_url) {
+                  for (let i = 0; i < validItems.length; i++) {
+                    const item = validItems[i];
+                    const idx = validIndices[i];
+                    try {
+                      await this.downloadAndSave(
+                        batchResult.full_zip_url,
+                        item.fileName,
+                        outputFolder
+                      );
+                      modal.markDone(idx);
+                      if (this.settings.deletePdfAfterConvert) {
+                        await this.app.vault.delete(item.file);
+                      }
+                    } catch (err) {
+                      modal.markFailed(idx, `\u4FDD\u5B58\u5931\u8D25: ${err.message}`);
+                    }
+                  }
                   resolve();
                   return;
                 }
-                try {
-                  const taskResult = await this.client.getTaskResult(taskId);
-                  if (taskResult.state === "done" && taskResult.full_zip_url) {
-                    await this.downloadAndSave(
-                      taskResult.full_zip_url,
-                      item.fileName,
-                      outputFolder
-                    );
-                    modal.markDone(globalIndex);
-                    if (this.settings.deletePdfAfterConvert) {
-                      await this.app.vault.delete(item.file);
-                    }
-                    resolve();
-                    return;
+                if (batchResult.state === "failed") {
+                  for (const idx of validIndices) {
+                    modal.markFailed(idx, batchResult.err_msg || "\u5904\u7406\u5931\u8D25");
                   }
-                  if (taskResult.state === "failed") {
-                    modal.markFailed(
-                      globalIndex,
-                      taskResult.err_msg || "\u5904\u7406\u5931\u8D25"
-                    );
-                    resolve();
-                    return;
-                  }
-                  modal.updateProgress(globalIndex, taskResult);
-                  setTimeout(poll, this.settings.pollInterval);
-                } catch (err) {
-                  modal.markFailed(globalIndex, err.message);
                   resolve();
+                  return;
                 }
-              };
-              poll();
-            } catch (err) {
-              modal.markFailed(globalIndex, err.message);
-              resolve();
-            }
+                for (const idx of validIndices) {
+                  modal.updateProgress(idx, batchResult);
+                }
+                setTimeout(poll, this.settings.pollInterval);
+              } catch (err) {
+                for (const idx of validIndices) {
+                  modal.markFailed(idx, err.message);
+                }
+                resolve();
+              }
+            };
+            poll();
           });
-        });
-        await Promise.all(pollPromises);
+        } catch (err) {
+          for (const idx of validIndices) {
+            modal.markFailed(idx, err.message);
+          }
+        }
       } catch (err) {
         for (const idx of batchIndices) {
           modal.markFailed(idx, `\u6279\u91CF\u64CD\u4F5C\u5931\u8D25: ${err.message}`);

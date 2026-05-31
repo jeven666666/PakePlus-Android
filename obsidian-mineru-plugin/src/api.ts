@@ -61,26 +61,34 @@ export class MinerUClient {
 		};
 	}
 
-	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
-		// Use Node.js native https module to bypass browser CORS
-		// esbuild config marks "builtin-modules" as external, so require("https") works
-		const https = require("https");
-		const NodeBuffer = require("buffer").Buffer;
+	async uploadFile(uploadUrl: string, fileData: ArrayBuffer | Uint8Array): Promise<void> {
+		// Use Node.js native https via electron to send raw binary data
+		const electron = require("electron");
+		const remote = electron.remote || electron;
+		if (!remote) {
+			throw new Error("无法加载 electron.remote 模块");
+		}
 
-		const urlObj = new URL(uploadUrl);
+		const NodeBuffer = remote.require("buffer").Buffer;
+		const https = remote.require("https");
+		const urlMod = remote.require("url");
+
+		const parsed = urlMod.parse(uploadUrl);
 
 		return new Promise<void>((resolve, reject) => {
-			// Properly convert ArrayBuffer to Node Buffer (byte-by-byte copy)
-			const buffer = NodeBuffer.alloc(fileData.byteLength);
-			const view = new Uint8Array(fileData);
-			for (let i = 0; i < view.length; i++) {
-				buffer[i] = view[i];
+			// Convert to Node Buffer properly
+			let buffer: any;
+			if (fileData instanceof Uint8Array) {
+				buffer = NodeBuffer.from(fileData);
+			} else {
+				const view = new Uint8Array(fileData);
+				buffer = NodeBuffer.from(view.buffer, view.byteOffset, view.byteLength);
 			}
 
 			const options = {
-				hostname: urlObj.hostname,
-				port: urlObj.port || 443,
-				path: urlObj.pathname + urlObj.search,
+				hostname: parsed.hostname,
+				port: parsed.port || 443,
+				path: uploadUrl.replace(/^https?:\/\/[^\/]+/, ""),
 				method: "PUT",
 				headers: {
 					"Content-Length": buffer.length,
@@ -115,27 +123,6 @@ export class MinerUClient {
 		});
 	}
 
-	async createTask(fileUrl: string, dataId?: string): Promise<string> {
-		const body: Record<string, any> = {
-			url: fileUrl,
-			model_version: this.settings.modelVersion,
-			is_ocr: this.settings.isOcr,
-			enable_formula: this.settings.enableFormula,
-			enable_table: this.settings.enableTable,
-			language: this.settings.language,
-		};
-		if (dataId) {
-			body.data_id = dataId;
-		}
-		const data = await this.request({
-			url: `${BASE_URL}/api/v4/extract/task`,
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify(body),
-		});
-		return data.data.task_id;
-	}
-
 	async getTaskResult(taskId: string): Promise<TaskResult> {
 		const data = await this.request({
 			url: `${BASE_URL}/api/v4/extract/task/${taskId}`,
@@ -143,6 +130,10 @@ export class MinerUClient {
 			headers: this.headers,
 		});
 		return data.data;
+	}
+
+	async getBatchResult(batchId: string): Promise<TaskResult> {
+		return this.getTaskResult(batchId);
 	}
 
 	async waitForTask(
