@@ -62,16 +62,10 @@ export class MinerUClient {
 	}
 
 	async uploadFile(uploadUrl: string, fileData: ArrayBuffer | Uint8Array): Promise<void> {
-		// Use Node.js native https via electron to send raw binary data
-		const electron = require("electron");
-		const remote = electron.remote || electron;
-		if (!remote) {
-			throw new Error("无法加载 electron.remote 模块");
-		}
-
-		const NodeBuffer = remote.require("buffer").Buffer;
-		const https = remote.require("https");
-		const urlMod = remote.require("url");
+		// Use Node.js native modules directly (esbuild marks builtin-modules as external)
+		const https = require("https");
+		const NodeBuffer = require("buffer").Buffer;
+		const urlMod = require("url");
 
 		const parsed = urlMod.parse(uploadUrl);
 

@@ -71,14 +71,9 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
-    const electron = require("electron");
-    const remote = electron.remote || electron;
-    if (!remote) {
-      throw new Error("\u65E0\u6CD5\u52A0\u8F7D electron.remote \u6A21\u5757");
-    }
-    const NodeBuffer = remote.require("buffer").Buffer;
-    const https = remote.require("https");
-    const urlMod = remote.require("url");
+    const https = require("https");
+    const NodeBuffer = require("buffer").Buffer;
+    const urlMod = require("url");
     const parsed = urlMod.parse(uploadUrl);
     return new Promise((resolve, reject) => {
       let buffer;
