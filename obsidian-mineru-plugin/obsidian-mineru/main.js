@@ -31,6 +31,9 @@ var import_obsidian5 = require("obsidian");
 
 // src/api.ts
 var import_obsidian = require("obsidian");
+var { Buffer: Buf } = require("buffer");
+var nodeHttps = require("https");
+var nodeHttp = require("http");
 var BASE_URL = "https://mineru.net";
 var MinerUClient = class {
   constructor(settings) {
@@ -71,15 +74,42 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
-    const response = await (0, import_obsidian.requestUrl)({
-      url: uploadUrl,
+    const urlObj = new URL(uploadUrl);
+    const isHttps = urlObj.protocol === "https:";
+    const clientLib = isHttps ? nodeHttps : nodeHttp;
+    const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
       method: "PUT",
-      body: fileData,
-      throw: false
+      headers: {
+        "Content-Length": fileData.byteLength
+      },
+      timeout: 12e4
+    };
+    return new Promise((resolve, reject) => {
+      const req = clientLib.request(options, (res) => {
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve();
+          } else {
+            const body = Buf.concat(chunks).toString("utf8");
+            reject(new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${res.statusCode} ${body.substring(0, 200)}`));
+          }
+        });
+      });
+      req.on("error", (err) => {
+        reject(new Error(`\u4E0A\u4F20\u5931\u8D25: ${err.message}`));
+      });
+      req.on("timeout", () => {
+        req.destroy();
+        reject(new Error("\u4E0A\u4F20\u8D85\u65F6"));
+      });
+      req.write(Buf.from(fileData));
+      req.end();
     });
-    if (response.status >= 400) {
-      throw new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${response.status}`);
-    }
   }
   async createTask(fileUrl, dataId) {
     const body = {

@@ -1,6 +1,10 @@
 import { requestUrl, RequestUrlParam } from "obsidian";
 import type { MinerUSettings } from "./settings";
 
+const { Buffer: Buf } = require("buffer");
+const nodeHttps = require("https");
+const nodeHttp = require("http");
+
 const BASE_URL = "https://mineru.net";
 
 export interface TaskResult {
@@ -62,15 +66,47 @@ export class MinerUClient {
 	}
 
 	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
-		const response = await requestUrl({
-			url: uploadUrl,
+		const urlObj = new URL(uploadUrl);
+		const isHttps = urlObj.protocol === "https:";
+		const clientLib = isHttps ? nodeHttps : nodeHttp;
+
+		const options: any = {
+			hostname: urlObj.hostname,
+			port: urlObj.port || (isHttps ? 443 : 80),
+			path: urlObj.pathname + urlObj.search,
 			method: "PUT",
-			body: fileData,
-			throw: false,
+			headers: {
+				"Content-Length": fileData.byteLength,
+			},
+			timeout: 120000,
+		};
+
+		return new Promise<void>((resolve, reject) => {
+			const req = clientLib.request(options, (res: any) => {
+				const chunks: any[] = [];
+				res.on("data", (chunk: any) => chunks.push(chunk));
+				res.on("end", () => {
+					if (res.statusCode >= 200 && res.statusCode < 300) {
+						resolve();
+					} else {
+						const body = Buf.concat(chunks).toString("utf8");
+						reject(new Error(`上传失败: HTTP ${res.statusCode} ${body.substring(0, 200)}`));
+					}
+				});
+			});
+
+			req.on("error", (err: Error) => {
+				reject(new Error(`上传失败: ${err.message}`));
+			});
+
+			req.on("timeout", () => {
+				req.destroy();
+				reject(new Error("上传超时"));
+			});
+
+			req.write(Buf.from(fileData));
+			req.end();
 		});
-		if (response.status >= 400) {
-			throw new Error(`上传失败: HTTP ${response.status}`);
-		}
 	}
 
 	async createTask(fileUrl: string, dataId?: string): Promise<string> {
