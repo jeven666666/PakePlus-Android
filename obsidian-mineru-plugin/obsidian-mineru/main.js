@@ -31,9 +31,6 @@ var import_obsidian5 = require("obsidian");
 
 // src/api.ts
 var import_obsidian = require("obsidian");
-var { Buffer: Buf } = require("buffer");
-var nodeHttps = require("https");
-var nodeHttp = require("http");
 var BASE_URL = "https://mineru.net";
 var MinerUClient = class {
   constructor(settings) {
@@ -74,29 +71,34 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
+    const https = require("https");
+    const NodeBuffer = require("buffer").Buffer;
     const urlObj = new URL(uploadUrl);
-    const isHttps = urlObj.protocol === "https:";
-    const clientLib = isHttps ? nodeHttps : nodeHttp;
-    const options = {
-      hostname: urlObj.hostname,
-      port: urlObj.port || (isHttps ? 443 : 80),
-      path: urlObj.pathname + urlObj.search,
-      method: "PUT",
-      headers: {
-        "Content-Length": fileData.byteLength
-      },
-      timeout: 12e4
-    };
     return new Promise((resolve, reject) => {
-      const req = clientLib.request(options, (res) => {
+      const buffer = NodeBuffer.alloc(fileData.byteLength);
+      const view = new Uint8Array(fileData);
+      for (let i = 0; i < view.length; i++) {
+        buffer[i] = view[i];
+      }
+      const options = {
+        hostname: urlObj.hostname,
+        port: urlObj.port || 443,
+        path: urlObj.pathname + urlObj.search,
+        method: "PUT",
+        headers: {
+          "Content-Length": buffer.length
+        },
+        timeout: 12e4
+      };
+      const req = https.request(options, (res) => {
         const chunks = [];
         res.on("data", (chunk) => chunks.push(chunk));
         res.on("end", () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve();
           } else {
-            const body = Buf.concat(chunks).toString("utf8");
-            reject(new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${res.statusCode} ${body.substring(0, 200)}`));
+            const body = NodeBuffer.concat(chunks).toString("utf8");
+            reject(new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${res.statusCode} - ${body.substring(0, 300)}`));
           }
         });
       });
@@ -107,7 +109,7 @@ var MinerUClient = class {
         req.destroy();
         reject(new Error("\u4E0A\u4F20\u8D85\u65F6"));
       });
-      req.write(Buf.from(fileData));
+      req.write(buffer);
       req.end();
     });
   }

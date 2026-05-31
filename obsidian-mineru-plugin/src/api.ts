@@ -1,10 +1,6 @@
 import { requestUrl, RequestUrlParam } from "obsidian";
 import type { MinerUSettings } from "./settings";
 
-const { Buffer: Buf } = require("buffer");
-const nodeHttps = require("https");
-const nodeHttp = require("http");
-
 const BASE_URL = "https://mineru.net";
 
 export interface TaskResult {
@@ -66,31 +62,41 @@ export class MinerUClient {
 	}
 
 	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
-		const urlObj = new URL(uploadUrl);
-		const isHttps = urlObj.protocol === "https:";
-		const clientLib = isHttps ? nodeHttps : nodeHttp;
+		// Use Node.js native https module to bypass browser CORS
+		// esbuild config marks "builtin-modules" as external, so require("https") works
+		const https = require("https");
+		const NodeBuffer = require("buffer").Buffer;
 
-		const options: any = {
-			hostname: urlObj.hostname,
-			port: urlObj.port || (isHttps ? 443 : 80),
-			path: urlObj.pathname + urlObj.search,
-			method: "PUT",
-			headers: {
-				"Content-Length": fileData.byteLength,
-			},
-			timeout: 120000,
-		};
+		const urlObj = new URL(uploadUrl);
 
 		return new Promise<void>((resolve, reject) => {
-			const req = clientLib.request(options, (res: any) => {
+			// Properly convert ArrayBuffer to Node Buffer (byte-by-byte copy)
+			const buffer = NodeBuffer.alloc(fileData.byteLength);
+			const view = new Uint8Array(fileData);
+			for (let i = 0; i < view.length; i++) {
+				buffer[i] = view[i];
+			}
+
+			const options = {
+				hostname: urlObj.hostname,
+				port: urlObj.port || 443,
+				path: urlObj.pathname + urlObj.search,
+				method: "PUT",
+				headers: {
+					"Content-Length": buffer.length,
+				},
+				timeout: 120000,
+			};
+
+			const req = https.request(options, (res: any) => {
 				const chunks: any[] = [];
 				res.on("data", (chunk: any) => chunks.push(chunk));
 				res.on("end", () => {
 					if (res.statusCode >= 200 && res.statusCode < 300) {
 						resolve();
 					} else {
-						const body = Buf.concat(chunks).toString("utf8");
-						reject(new Error(`上传失败: HTTP ${res.statusCode} ${body.substring(0, 200)}`));
+						const body = NodeBuffer.concat(chunks).toString("utf8");
+						reject(new Error(`上传失败: HTTP ${res.statusCode} - ${body.substring(0, 300)}`));
 					}
 				});
 			});
@@ -104,7 +110,7 @@ export class MinerUClient {
 				reject(new Error("上传超时"));
 			});
 
-			req.write(Buf.from(fileData));
+			req.write(buffer);
 			req.end();
 		});
 	}
