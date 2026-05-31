@@ -71,11 +71,13 @@ var MinerUClient = class {
     };
   }
   async uploadFile(uploadUrl, fileData) {
-    await (0, import_obsidian.requestUrl)({
-      url: uploadUrl,
+    const response = await fetch(uploadUrl, {
       method: "PUT",
       body: fileData
     });
+    if (!response.ok) {
+      throw new Error(`\u4E0A\u4F20\u5931\u8D25: HTTP ${response.status}`);
+    }
   }
   async createTask(fileUrl, dataId) {
     const body = {

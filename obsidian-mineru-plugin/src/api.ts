@@ -62,11 +62,13 @@ export class MinerUClient {
 	}
 
 	async uploadFile(uploadUrl: string, fileData: ArrayBuffer): Promise<void> {
-		await requestUrl({
-			url: uploadUrl,
+		const response = await fetch(uploadUrl, {
 			method: "PUT",
 			body: fileData,
 		});
+		if (!response.ok) {
+			throw new Error(`上传失败: HTTP ${response.status}`);
+		}
 	}
 
 	async createTask(fileUrl: string, dataId?: string): Promise<string> {
