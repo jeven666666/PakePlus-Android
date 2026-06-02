@@ -7,7 +7,7 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import Chip from '@/components/ui/Chip'
 import { stylePresets, aspectRatios, resolutions, samplers, cameraMotions } from '@/utils/mockData'
-import { Sparkles, ChevronDown, ChevronUp, Upload, X, Zap, ImagePlus, Film, Layers } from 'lucide-react'
+import { Sparkles, ChevronDown, ChevronUp, Upload, X, Zap, ImagePlus, Film, Layers, Plus, Minus, GripVertical, Wand2 } from 'lucide-react'
 
 const NEG_CHIPS = ['模糊', '变形', '低质量', '水印']
 const MAX_PROMPT = 1000
@@ -50,8 +50,18 @@ export default function ControlPanel() {
   const [batchPrompts, setBatchPrompts] = useState('')
   const firstFrameRef = useRef<HTMLInputElement>(null)
   const lastFrameRef = useRef<HTMLInputElement>(null)
+  const [videoSubMode, setVideoSubMode] = useState<'standard' | 'all-reference' | 'smart-multi-frame'>('standard')
+  const [refFusion, setRefFusion] = useState('加权融合')
+  const [globalRefStrength, setGlobalRefStrength] = useState(70)
+  const [multiRefItems, setMultiRefItems] = useState<{id: number; image: string; weight: number}[]>([])
+  const [frameEntries, setFrameEntries] = useState<{id: number; prompt: string; image: string; duration: number}[]>([
+    { id: 1, prompt: '', image: '', duration: 2 },
+    { id: 2, prompt: '', image: '', duration: 2 },
+  ])
+  const [autoInterpolate, setAutoInterpolate] = useState(true)
+  const [interpMethod, setInterpMethod] = useState('风格保持')
 
-  if (mode === 'chat') return null
+  if (mode === 'chat' || mode === 'tts') return null
 
   const addNegChip = (w: string) => setNegativePrompt((p) => {
     const parts = p.split(',').map((s) => s.trim()).filter(Boolean)
@@ -163,6 +173,106 @@ export default function ControlPanel() {
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => handleFrameFile(e, setter)} /></div>
   )
 
+  const videoSubModeTabs = [
+    { key: 'standard' as const, label: '标准模式' },
+    { key: 'all-reference' as const, label: '全能参考' },
+    { key: 'smart-multi-frame' as const, label: '智能多帧' },
+  ]
+
+  const VideoSubModeSelector = () => (
+    <div className="flex rounded-input overflow-hidden border border-agnes-border">
+      {videoSubModeTabs.map((t) => (
+        <button key={t.key} onClick={() => setVideoSubMode(t.key)} className={`flex-1 py-1.5 text-xs transition-colors ${videoSubMode === t.key ? 'bg-agnes-purple text-white' : 'bg-agnes-bg text-agnes-text-secondary hover:text-agnes-text-primary'}`}>{t.label}</button>
+      ))}
+    </div>
+  )
+
+  const AllRefSec = () => (
+    <section className="space-y-3">
+      <p className="text-[10px] text-agnes-text-muted">上传参考图/视频，AI 综合所有参考素材生成视频</p>
+      <div className="space-y-2">
+        {multiRefItems.map((item, i) => (
+          <div key={item.id} className="flex items-center gap-2 p-2 bg-agnes-bg rounded-card border border-agnes-border">
+            <GripVertical size={12} className="text-agnes-text-muted flex-shrink-0" />
+            <div className="w-10 h-10 rounded border border-agnes-border flex items-center justify-center overflow-hidden flex-shrink-0">
+              {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : <Upload size={12} className="text-agnes-text-muted" />}
+            </div>
+            <Slider label="" value={item.weight} onChange={(v) => setMultiRefItems((p) => p.map((r, j) => j === i ? { ...r, weight: v } : r))} min={0} max={100} />
+            <button onClick={() => setMultiRefItems((p) => p.filter((_, j) => j !== i))} className="flex-shrink-0"><Minus size={14} className="text-agnes-text-muted hover:text-agnes-text-primary" /></button>
+          </div>
+        ))}
+        {multiRefItems.length < 4 && (
+          <button onClick={() => setMultiRefItems((p) => [...p, { id: Date.now(), image: '', weight: 50 }])} className="flex items-center gap-1 text-xs text-agnes-cyan hover:text-agnes-purple transition-colors"><Plus size={14} />添加参考</button>
+        )}
+      </div>
+      <Select label="融合策略" value={refFusion} onChange={(e) => setRefFusion(e.target.value)} options={toOpts(['加权融合','顺序拼接','风格迁移'])} />
+      <Slider label="全局参考强度" value={globalRefStrength} onChange={setGlobalRefStrength} min={0} max={100} />
+    </section>
+  )
+
+  const SmartFrameSec = () => (
+    <section className="space-y-3">
+      <p className="text-[10px] text-agnes-text-muted">为每个关键帧单独设定画面描述，AI 自动补全过渡帧</p>
+      <div className="space-y-2">
+        {frameEntries.map((entry, i) => (
+          <div key={entry.id} className="p-2 bg-agnes-bg rounded-card border border-agnes-border space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-agnes-text-secondary font-medium">帧 {i + 1}</span>
+              {frameEntries.length > 2 && <button onClick={() => setFrameEntries((p) => p.filter((_, j) => j !== i))}><Minus size={12} className="text-agnes-text-muted hover:text-agnes-text-primary" /></button>}
+            </div>
+            <input value={entry.prompt} onChange={(e) => setFrameEntries((p) => p.map((f, j) => j === i ? { ...f, prompt: e.target.value } : f))} placeholder="画面描述..." className="w-full bg-agnes-bg-secondary border border-agnes-border rounded-input px-2 py-1 text-xs text-agnes-text-primary focus:outline-none focus:border-agnes-purple/50 placeholder:text-agnes-text-muted" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded border border-agnes-border flex items-center justify-center flex-shrink-0">
+                {entry.image ? <img src={entry.image} alt="" className="w-full h-full object-cover rounded" /> : <ImagePlus size={12} className="text-agnes-text-muted" />}
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-agnes-text-muted">时长</span>
+                <input type="number" value={entry.duration} onChange={(e) => setFrameEntries((p) => p.map((f, j) => j === i ? { ...f, duration: +e.target.value } : f))} min={0.5} step={0.5} className="w-14 bg-agnes-bg-secondary border border-agnes-border rounded-input px-2 py-0.5 text-xs text-agnes-text-primary text-center focus:outline-none focus:border-agnes-purple/50" />
+                <span className="text-[10px] text-agnes-text-muted">s</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={() => setFrameEntries((p) => [...p, { id: Date.now(), prompt: '', image: '', duration: 2 }])} className="flex items-center gap-1 text-xs text-agnes-cyan hover:text-agnes-purple transition-colors"><Plus size={14} />添加帧</button>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-agnes-text-muted">自动补帧</span>
+        <button onClick={() => setAutoInterpolate(!autoInterpolate)} className={`w-10 h-5 rounded-full transition-colors ${autoInterpolate ? 'bg-agnes-purple' : 'bg-agnes-border'}`}><span className={`block w-4 h-4 rounded-full bg-white transition-transform ${autoInterpolate ? 'translate-x-5' : 'translate-x-0.5'}`} /></button>
+      </div>
+      {autoInterpolate && <Select label="插值方式" value={interpMethod} onChange={(e) => setInterpMethod(e.target.value)} options={toOpts(['线性插值','风格保持','场景渐变'])} />}
+    </section>
+  )
+
+  const VideoSettingsSec = () => (
+    <section>
+      <div className="flex items-center gap-1.5 mb-2"><Film size={14} className="text-agnes-cyan" /><h3 className="text-xs text-agnes-text-secondary">视频设置</h3></div>
+      <div className="grid grid-cols-2 gap-3">
+        <Select label="输入方式" value={videoInputMode} onChange={(e) => setVideoInputMode(e.target.value)} options={toOpts(['文生视频','图生视频','续帧'])} />
+        <Select label="视频时长" value={duration} onChange={(e) => setDuration(e.target.value)} options={['4','8','16'].map((v) => ({ value: v, label: `${v}s` }))} />
+        <Select label="帧率" value={fps} onChange={(e) => setFps(e.target.value)} options={['24','30','60'].map((v) => ({ value: v, label: `${v}fps` }))} />
+        <Select label="画幅比例" value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} options={toOpts(aspectRatios)} />
+        <Select label="分辨率" value={resolution} onChange={(e) => setResolution(e.target.value)} options={toOpts(resolutions)} />
+      </div>
+    </section>
+  )
+
+  const MotionSec = () => (
+    <section><h3 className="text-xs text-agnes-text-secondary mb-2">运动与镜头</h3><div className="space-y-2">
+      <Slider label="运动强度" value={motionIntensity} onChange={setMotionIntensity} min={1} max={10} />
+      <Select label="镜头运动" value={cameraMotion} onChange={(e) => setCameraMotion(e.target.value)} options={toOpts(cameraMotions)} />
+      <Select label="节奏控制" value={rhythm} onChange={(e) => setRhythm(e.target.value)} options={toOpts(['匀速','渐快','渐慢','快慢快'])} />
+    </div></section>
+  )
+
+  const FrameCtrlSec = () => (
+    <section>
+      <button onClick={() => setFrameOpen(!frameOpen)} className="flex items-center justify-between w-full text-xs text-agnes-text-secondary hover:text-agnes-text-primary transition-colors"><span>帧控制</span>{frameOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</button>
+      <div className={`overflow-hidden transition-all duration-300 ${frameOpen ? 'max-h-[400px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+        <div className="space-y-3"><FrameUpload label="首帧" frame={firstFrame} setter={setFirstFrame} ref={firstFrameRef} /><FrameUpload label="尾帧" frame={lastFrame} setter={setLastFrame} ref={lastFrameRef} /><Slider label="风格一致性" value={styleConsistency} onChange={setStyleConsistency} min={1} max={10} /></div>
+      </div>
+    </section>
+  )
+
   const modes: Record<string, () => React.ReactNode> = {
     'text-to-image': () => (<>
       <PromptSec ph="描述你想要生成的画面..." /><D /><NegSec /><D /><BasicSec /><D /><StyleSec /><D /><AdvSec /><D /><RefSec />
@@ -176,7 +286,7 @@ export default function ControlPanel() {
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
         {refImages.length > 0 && <div className="flex gap-2 mt-2 flex-wrap">{refImages.map((src, i) => (
           <div key={i} className="relative w-20 h-20 rounded-card overflow-hidden group"><img src={src} alt="" className="w-full h-full object-cover" />
-            <button onClick={() => removeRef(i)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-agnes-bg/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} className="text-agnes-text-primary" /></button></div>))}</div>}
+            <button onClick={() => removeRef(i)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-agnes-bg/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"><X size={12} className="text-agnes-text-primary" /></button></div>))}</div>}
         <div className="mt-3 space-y-2"><Slider label="图片权重" value={imageWeight} onChange={setImageWeight} min={0} max={100} /><Select label="影响模式" value={influenceMode} onChange={(e) => setInfluenceMode(e.target.value)} options={toOpts(['风格参考','构图参考','色彩参考','完整参考'])} /></div>
       </section><D />
       <section><label className="block text-agnes-text-secondary text-xs mb-1.5">提示词</label><textarea value={prompt} onChange={(e) => setPrompt(e.target.value.slice(0, MAX_PROMPT))} placeholder="描述你想要的调整..." rows={3} className={taCls} /></section>
@@ -184,27 +294,10 @@ export default function ControlPanel() {
     </>),
     'text-to-video': () => (<>
       <PromptSec ph="描述你想要生成的视频画面..." /><D /><NegSec /><D />
-      <section>
-        <div className="flex items-center gap-1.5 mb-2"><Film size={14} className="text-agnes-cyan" /><h3 className="text-xs text-agnes-text-secondary">视频设置</h3></div>
-        <div className="grid grid-cols-2 gap-3">
-          <Select label="输入方式" value={videoInputMode} onChange={(e) => setVideoInputMode(e.target.value)} options={toOpts(['文生视频','图生视频','续帧'])} />
-          <Select label="视频时长" value={duration} onChange={(e) => setDuration(e.target.value)} options={['4','8','16'].map((v) => ({ value: v, label: `${v}s` }))} />
-          <Select label="帧率" value={fps} onChange={(e) => setFps(e.target.value)} options={['24','30','60'].map((v) => ({ value: v, label: `${v}fps` }))} />
-          <Select label="画幅比例" value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} options={toOpts(aspectRatios)} />
-          <Select label="分辨率" value={resolution} onChange={(e) => setResolution(e.target.value)} options={toOpts(resolutions)} />
-        </div>
-      </section><D />
-      <section><h3 className="text-xs text-agnes-text-secondary mb-2">运动与镜头</h3><div className="space-y-2">
-        <Slider label="运动强度" value={motionIntensity} onChange={setMotionIntensity} min={1} max={10} />
-        <Select label="镜头运动" value={cameraMotion} onChange={(e) => setCameraMotion(e.target.value)} options={toOpts(cameraMotions)} />
-        <Select label="节奏控制" value={rhythm} onChange={(e) => setRhythm(e.target.value)} options={toOpts(['匀速','渐快','渐慢','快慢快'])} />
-      </div></section><D />
-      <section>
-        <button onClick={() => setFrameOpen(!frameOpen)} className="flex items-center justify-between w-full text-xs text-agnes-text-secondary hover:text-agnes-text-primary transition-colors"><span>帧控制</span>{frameOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</button>
-        <div className={`overflow-hidden transition-all duration-300 ${frameOpen ? 'max-h-[400px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-          <div className="space-y-3"><FrameUpload label="首帧" frame={firstFrame} setter={setFirstFrame} ref={firstFrameRef} /><FrameUpload label="尾帧" frame={lastFrame} setter={setLastFrame} ref={lastFrameRef} /><Slider label="风格一致性" value={styleConsistency} onChange={setStyleConsistency} min={1} max={10} /></div>
-        </div>
-      </section><D /><AdvSec showHd={false} showSampler={false} /><D /><RefSec accept="image/*,video/*" label="参考视频/图片" />
+      <VideoSubModeSelector />
+      {videoSubMode === 'all-reference' && <><D /><AllRefSec /></>}
+      {videoSubMode === 'smart-multi-frame' && <><D /><SmartFrameSec /></>}
+      <D /><VideoSettingsSec /><D /><MotionSec /><D /><FrameCtrlSec /><D /><AdvSec showHd={false} showSampler={false} /><D /><RefSec accept="image/*,video/*" label="参考视频/图片" />
     </>),
     'batch': () => (<>
       <section>
@@ -213,9 +306,10 @@ export default function ControlPanel() {
         <div className="mt-1.5"><span className="text-xs text-agnes-text-muted font-mono">{batchPrompts.split('\n').filter((l) => l.trim()).length} 行</span></div>
       </section><D /><BasicSec countLabel="每条数量" /><D /><StyleSec />
     </>),
+    'tts': () => null,
   }
 
-  const btnLabel: Record<string, string> = { 'text-to-image': '生成', 'image-to-image': '图生图', 'text-to-video': '生成视频', 'batch': '批量生成' }
+  const btnLabel: Record<string, string> = { 'text-to-image': '生成', 'image-to-image': '图生图', 'text-to-video': '生成视频', 'batch': '批量生成', 'tts': '语音合成' }
 
   return (
     <aside className="w-80 bg-agnes-bg-secondary border-r border-agnes-border overflow-y-auto flex flex-col">
