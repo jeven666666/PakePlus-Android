@@ -28,7 +28,7 @@ export default function Studio() {
   return (
     <div className="h-screen flex flex-col bg-agnes-bg overflow-hidden">
       <TopBar />
-      <div className="flex-1 flex min-h-0 pt-14">
+      <div className="flex-1 flex min-h-0">
         {isChat ? (
           <ChatMode />
         ) : isTTS ? (
