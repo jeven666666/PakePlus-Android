@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
 import { showToast } from '@/components/ui/Toast'
 import { cn } from '@/utils/helpers'
+import api from '@/utils/api'
 
 type TTSModel = 'mimo-v2.5-tts' | 'mimo-v2.5-tts-voicedesign' | 'mimo-v2.5-tts-voiceclone'
 type StyleMode = 'natural' | 'tag'
@@ -82,8 +83,7 @@ export default function TTSMode() {
     setGenerated(false)
 
     try {
-      const apiClient = (await import('@/utils/api')).default
-      const res = await apiClient.synthesizeTts({
+      const res = await api.synthesizeTts({
         text: synthText,
         voice: selectedVoice,
         model,
@@ -98,7 +98,7 @@ export default function TTSMode() {
 
       // Poll for completion
       const poll = setInterval(async () => {
-        const taskRes = await apiClient.getTask(res.data.id)
+        const taskRes = await api.getTask(res.data.id)
         if (taskRes.data?.status === 'success') {
           clearInterval(poll)
           setGenerating(false)
@@ -261,7 +261,7 @@ export default function TTSMode() {
                   <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200', optimizePreview ? 'left-[22px]' : 'left-0.5')} />
                 </button>
               </div>
-              <Button variant="secondary" size="sm" className="w-full mt-3 gap-1.5" onClick={async () => { if (!synthText.trim()) { showToast('warning', '请先输入合成文本'); return; } try { const apiClient = (await import('@/utils/api')).default; const res = await apiClient.chatCompletion([{ role: 'user', content: `请将以下文本适配为适合语音合成的格式，添加适当的停顿和语气标记：${synthText}` }]); if (res.data?.choices?.[0]?.message?.content) { setSynthText(res.data.choices[0].message.content); showToast('success', '文本适配完成'); } else { showToast('error', '适配失败'); } } catch { showToast('error', '网络错误'); } }}><Zap className="w-3.5 h-3.5" />生成适配文本</Button>
+              <Button variant="secondary" size="sm" className="w-full mt-3 gap-1.5" onClick={async () => { if (!synthText.trim()) { showToast('warning', '请先输入合成文本'); return; } try { const res = await api.chatCompletion([{ role: 'user', content: `请将以下文本适配为适合语音合成的格式，添加适当的停顿和语气标记：${synthText}` }]); if (res.data?.choices?.[0]?.message?.content) { setSynthText(res.data.choices[0].message.content); showToast('success', '文本适配完成'); } else { showToast('error', '适配失败'); } } catch { showToast('error', '网络错误'); } }}><Zap className="w-3.5 h-3.5" />生成适配文本</Button>
             </div>
           )}
 

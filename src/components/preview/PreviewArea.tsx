@@ -12,6 +12,7 @@ import Chip from '@/components/ui/Chip'
 import Progress from '@/components/ui/Progress'
 import { getStatusLabel, getStatusColor, formatDuration } from '@/utils/helpers'
 import { showToast } from '@/components/ui/Toast'
+import api from '@/utils/api'
 
 
 const modeLabels: Record<string, string> = {
@@ -300,7 +301,6 @@ export default function PreviewArea() {
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.25, 0.5)), [])
   const handleToggleFavorite = useCallback(async () => {
     if (!currentTask) return
-    const api = (await import('@/utils/api')).default
     const res = await api.toggleFavorite(currentTask.id)
     if (res.error) {
       showToast('error', '收藏操作失败')
@@ -310,7 +310,6 @@ export default function PreviewArea() {
     }
   }, [currentTask, favorited])
   const handleAction = useCallback(async (label: string) => {
-    const api = (await import('@/utils/api')).default
     const getPreviewUrl = () => {
       if (!currentTask) return ''
       const hasResult = currentTask.resultUrls.length > 0
@@ -432,7 +431,6 @@ export default function PreviewArea() {
   }, [currentTask, selectedItems])
   const handleBatchVideo = useCallback(async () => {
     if (!currentTask) return
-    const api = (await import('@/utils/api')).default
     const indices = Array.from(selectedItems)
     let successCount = 0
     for (const _i of indices) {

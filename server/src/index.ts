@@ -7,8 +7,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+const CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000';
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: CORS_ORIGINS.split(',').map(s => s.trim()),
   credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -18,6 +19,17 @@ app.use(express.urlencoded({ extended: true }));
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.use('/uploads', express.static(UPLOAD_DIR));
+
+// Serve frontend static files in production
+const DIST_DIR = path.resolve(__dirname, '../../dist');
+if (fs.existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR));
+  // SPA fallback: serve index.html for all non-API routes
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+}
 
 // API routes
 import authRoutes from './routes/auth';
@@ -53,7 +65,6 @@ app.get('/api/health', (_req, res) => {
 
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err.stack);
   res.status(500).json({ error: err.message || '服务器内部错误' });
 });
 

@@ -38,6 +38,7 @@ router.post('/generate', authMiddleware, async (req: Request, res: Response) => 
 
     // Deduct credits
     db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+    db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)').run(uuid(), req.user!.userId, 'consume', -20, '图像生成');
 
     // Start async processing
     processImageTask(taskId, req.user!.userId, prompt, params, count).catch(console.error);

@@ -105,6 +105,17 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_assets_user ON assets(user_id);
   CREATE INDEX IF NOT EXISTS idx_templates_user ON templates(user_id);
   CREATE INDEX IF NOT EXISTS idx_model_configs_user ON model_configs(user_id);
+
+  CREATE TABLE IF NOT EXISTS credits_history (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    description TEXT,
+    created_at INTEGER DEFAULT (unixepoch()),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_credits_history_user ON credits_history(user_id);
 `);
 
 export default db;

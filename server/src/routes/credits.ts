@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import db from '../models/database';
 import { authMiddleware } from '../middleware/auth';
+import { v4 as uuid } from 'uuid';
 
 const router = Router();
 
@@ -32,6 +33,8 @@ router.post('/redeem', authMiddleware, (req: Request, res: Response) => {
     if (code.toUpperCase().startsWith('AGNES')) {
       const credits = 100;
       db.prepare('UPDATE users SET credits = credits + ?, updated_at = unixepoch() WHERE id = ?').run(credits, req.user!.userId);
+      db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)')
+        .run(uuid(), req.user!.userId, 'redeem', credits, `兑换码充值 +${credits}`);
       res.json({ success: true, creditsAdded: credits });
     } else {
       res.status(400).json({ error: '无效的兑换码' });
@@ -61,6 +64,8 @@ router.post('/purchase', authMiddleware, (req: Request, res: Response) => {
     // In production, integrate with payment gateway here
     // For now, directly add credits
     db.prepare('UPDATE users SET credits = credits + ?, updated_at = unixepoch() WHERE id = ?').run(pkg.credits, req.user!.userId);
+    db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)')
+      .run(uuid(), req.user!.userId, 'purchase', pkg.credits, `积分充值 +${pkg.credits}`);
     res.json({ success: true, creditsAdded: pkg.credits, price: pkg.price });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -110,6 +115,8 @@ router.post('/upgrade', authMiddleware, (req: Request, res: Response) => {
     // In production, integrate with payment gateway
     db.prepare('UPDATE users SET membership = ?, storage_limit = ?, credits = credits + ?, membership_expires_at = ?, updated_at = unixepoch() WHERE id = ?')
       .run(tier, storageLimit, credits, expiresAt, req.user!.userId);
+    db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)')
+      .run(uuid(), req.user!.userId, 'upgrade', credits, `会员升级 +${credits}积分`);
 
     res.json({ success: true, tier, creditsAdded: credits, expiresAt });
   } catch (err: any) {
@@ -120,17 +127,7 @@ router.post('/upgrade', authMiddleware, (req: Request, res: Response) => {
 // Get credits history
 router.get('/history', authMiddleware, (req: Request, res: Response) => {
   try {
-    // Mock history - in production, query from a credits_history table
-    const history = [
-      { id: '1', date: '2024-01-15', type: 'consume', amount: -20, description: '图像生成' },
-      { id: '2', date: '2024-01-14', type: 'consume', amount: -50, description: '视频生成' },
-      { id: '3', date: '2024-01-13', type: 'purchase', amount: 500, description: '积分充值' },
-      { id: '4', date: '2024-01-12', type: 'consume', amount: -10, description: '语音合成' },
-      { id: '5', date: '2024-01-11', type: 'invite', amount: 50, description: '邀请奖励' },
-      { id: '6', date: '2024-01-10', type: 'redeem', amount: 100, description: '兑换码充值' },
-      { id: '7', date: '2024-01-09', type: 'consume', amount: -15, description: '图片编辑' },
-      { id: '8', date: '2024-01-08', type: 'consume', amount: -5, description: 'AI对话' },
-    ];
+    const history = db.prepare('SELECT * FROM credits_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(req.user!.userId);
     res.json({ history });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -140,14 +137,9 @@ router.get('/history', authMiddleware, (req: Request, res: Response) => {
 // Get invite records
 router.get('/invite/records', authMiddleware, (req: Request, res: Response) => {
   try {
-    // Mock invite records
-    const records = [
-      { id: '1', invitee: 'user1@agnes.ai', date: '2024-01-14', status: 'registered', reward: 50 },
-      { id: '2', invitee: 'user2@agnes.ai', date: '2024-01-12', status: 'registered', reward: 50 },
-      { id: '3', invitee: 'user3@agnes.ai', date: '2024-01-10', status: 'pending', reward: 0 },
-      { id: '4', invitee: 'user4@agnes.ai', date: '2024-01-08', status: 'registered', reward: 50 },
-    ];
-    res.json({ records });
+    const user: any = db.prepare('SELECT invite_code FROM users WHERE id = ?').get(req.user!.userId);
+    const records = db.prepare('SELECT id, email as invitee, created_at as date, ? as status FROM users WHERE invite_code = ? LIMIT 50').all('registered', user?.invite_code || '');
+    res.json({ records: records || [] });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

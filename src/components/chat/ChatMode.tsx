@@ -6,6 +6,7 @@ import Chip from '@/components/ui/Chip'
 import Button from '@/components/ui/Button'
 import { showToast } from '@/components/ui/Toast'
 import { cn } from '@/utils/helpers'
+import api from '@/utils/api'
 
 interface ChatMessage {
   id: string
@@ -101,8 +102,7 @@ export default function ChatMode() {
     setIsTyping(true)
 
     try {
-      const apiClient = (await import('@/utils/api')).default
-      const res = await apiClient.chatCompletion([
+      const res = await api.chatCompletion([
         ...messages.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: input },
       ])
@@ -137,8 +137,7 @@ export default function ChatMode() {
 
   const handleConvertTask = async (type: 'image' | 'video', prompt: string) => {
     try {
-      const apiClient = (await import('@/utils/api')).default
-      const apiFn = type === 'video' ? apiClient.generateVideo.bind(apiClient) : apiClient.generateImage.bind(apiClient)
+      const apiFn = type === 'video' ? api.generateVideo.bind(api) : api.generateImage.bind(api)
       const res = await apiFn({ prompt })
       if (res.error) {
         showToast('error', res.error)

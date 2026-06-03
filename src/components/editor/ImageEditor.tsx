@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import Chip from '@/components/ui/Chip'
 import { showToast } from '@/components/ui/Toast'
 import { cn } from '@/utils/helpers'
+import api from '@/utils/api'
 
 const TOOL_GROUPS = [
   { label: '基础编辑', tools: [
@@ -154,8 +155,7 @@ export default function ImageEditor() {
     setProgress(0)
 
     try {
-      const apiClient = (await import('@/utils/api')).default
-      const res = await apiClient.processEditor({
+      const res = await api.processEditor({
         imageId: 'current',
         tool: selectedTool,
         prompt: inpaintPrompt,
@@ -174,7 +174,7 @@ export default function ImageEditor() {
       }, 200)
 
       const poll = setInterval(async () => {
-        const taskRes = await apiClient.getTask(res.data.id)
+        const taskRes = await api.getTask(res.data.id)
         if (taskRes.data?.status === 'success') {
           clearInterval(poll)
           clearInterval(progressInterval)

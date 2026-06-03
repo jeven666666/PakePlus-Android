@@ -34,6 +34,7 @@ router.post('/generate', authMiddleware, async (req: Request, res: Response) => 
     );
 
     db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+    db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)').run(uuid(), req.user!.userId, 'consume', -50, '视频生成');
 
     processVideoTask(taskId, req.user!.userId, prompt).catch(console.error);
 

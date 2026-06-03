@@ -25,6 +25,7 @@ router.post('/completions', authMiddleware, async (req: Request, res: Response) 
     }
 
     db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+    db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)').run(uuid(), req.user!.userId, 'consume', -5, 'AI对话');
 
     // Generate AI response (mock - in production, call actual LLM API)
     const responses = [
@@ -66,6 +67,7 @@ router.post('/optimize', authMiddleware, async (req: Request, res: Response) => 
     }
 
     db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+    db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)').run(uuid(), req.user!.userId, 'consume', -2, '提示词优化');
 
     // Generate optimized prompt (mock - in production, call actual LLM API with system prompt)
     const systemInstruction = '你是一个专业的AI图像生成提示词优化专家。请优化用户提供的提示词，添加更多细节、更好的描述词和艺术术语，使其更加生动、具体和专业。只返回优化后的提示词，不要添加任何解释或额外说明。';

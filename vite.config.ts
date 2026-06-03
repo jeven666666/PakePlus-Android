@@ -14,15 +14,13 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: 'hidden',
+    sourcemap: false,
   },
   plugins: [
     react({
-      babel: {
-        plugins: [
-          'react-dev-locator',
-        ],
-      },
+      babel: process.env.NODE_ENV === 'development' ? {
+        plugins: ['react-dev-locator'],
+      } : undefined,
     }),
     traeBadgePlugin({
       variant: 'dark',

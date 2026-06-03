@@ -7,6 +7,7 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import Chip from '@/components/ui/Chip'
 import { stylePresets, aspectRatios, resolutions, samplers, cameraMotions } from '@/utils/mockData'
+import api from '@/utils/api'
 import { Sparkles, ChevronDown, ChevronUp, Upload, X, Zap, ImagePlus, Film, Layers, Plus, Minus, GripVertical, Wand2 } from 'lucide-react'
 
 const NEG_CHIPS = ['模糊', '变形', '低质量', '水印']
@@ -106,9 +107,8 @@ export default function ControlPanel() {
     setGenerating(true)
 
     try {
-      const apiClient = (await import('@/utils/api')).default
       const taskType = mode === 'text-to-video' ? 'video' : 'image'
-      const apiFn = taskType === 'video' ? apiClient.generateVideo.bind(apiClient) : apiClient.generateImage.bind(apiClient)
+      const apiFn = taskType === 'video' ? api.generateVideo.bind(api) : api.generateImage.bind(api)
 
       const res = await apiFn({
         prompt: isBatch ? batchPrompts : prompt,
@@ -132,7 +132,7 @@ export default function ControlPanel() {
 
       // Poll for task status from backend
       const pollInterval = setInterval(async () => {
-        const taskRes = await apiClient.getTask(res.data.id)
+        const taskRes = await api.getTask(res.data.id)
         if (taskRes.data) {
           const t = taskRes.data
           useTaskStore.getState().updateTaskProgress(taskId, t.progress || 0)
@@ -218,8 +218,7 @@ export default function ControlPanel() {
       if (!prompt.trim()) { showToast('warning', '请先输入提示词'); return }
       setOptimizing(true)
       try {
-        const apiClient = (await import('@/utils/api')).default
-        const res = await apiClient.optimizePrompt(prompt)
+        const res = await api.optimizePrompt(prompt)
         if (res.error) {
           showToast('error', res.error)
         } else if (res.data?.optimizedPrompt) {
