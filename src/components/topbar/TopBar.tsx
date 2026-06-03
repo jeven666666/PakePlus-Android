@@ -49,6 +49,7 @@ export default function TopBar() {
   const setCurrentModel = useModelStore((s) => s.setCurrentModel)
 
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'testing'>('connected')
@@ -206,7 +207,13 @@ export default function TopBar() {
 
         <div className="relative" ref={userMenuRef}>
           <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            onClick={() => {
+              if (!userMenuOpen && userMenuRef.current) {
+                const rect = userMenuRef.current.getBoundingClientRect()
+                setMenuPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+              }
+              setUserMenuOpen(!userMenuOpen)
+            }}
             aria-label="用户"
             className="relative w-8 h-8 rounded-full bg-agnes-purple/20 border border-agnes-purple/30 flex items-center justify-center text-agnes-purple hover:bg-agnes-purple/30 transition-colors"
           >
@@ -214,7 +221,7 @@ export default function TopBar() {
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-[#101523] border border-agnes-border shadow-2xl shadow-black/60 py-2 z-[100]">
+            <div className="fixed z-[100] w-60 rounded-xl bg-[#101523] border border-agnes-border shadow-2xl shadow-black/60 py-2" style={{ top: menuPos.top, right: menuPos.right }}>
               <div className="px-4 py-3">
                 <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
                 <div className="text-xs text-agnes-text-muted mt-0.5">user@agnes.ai</div>
