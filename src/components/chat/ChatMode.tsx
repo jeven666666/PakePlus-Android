@@ -252,9 +252,9 @@ export default function ChatMode() {
           )}
         </div>
 
-        <div className="shrink-0 border-t border-agnes-border bg-agnes-bg-secondary p-4">
+        <div className="shrink-0 border-t border-agnes-border bg-agnes-bg-secondary p-4 relative">
           <div className="max-w-3xl mx-auto">
-            <div className="glass rounded-input overflow-hidden focus-within:border-agnes-purple/40 transition-colors">
+            <div className="glass rounded-input focus-within:border-agnes-purple/40 transition-colors">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -266,12 +266,11 @@ export default function ChatMode() {
               />
               <div className="flex items-center justify-between gap-2 px-3 pb-3">
                 <div className="flex gap-2 overflow-x-auto flex-nowrap scrollbar-hide min-w-0">
-                  <div className="relative">
-                    <button onClick={() => setShowModelSel(!showModelSel)} className="flex items-center gap-1 h-7 px-2 text-xs rounded-md text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors border border-agnes-border">
-                      <Sparkles className="w-3 h-3" />
-                      生成模型选择
-                      {showModelSel ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                    </button>
+                  <button onClick={() => setShowModelSel(!showModelSel)} className="flex items-center gap-1 h-7 px-2 text-xs rounded-md text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors border border-agnes-border shrink-0">
+                    <Sparkles className="w-3 h-3" />
+                    生成模型选择
+                    {showModelSel ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                  </button>
                     {showModelSel && (
                       <div className="absolute bottom-full left-0 mb-2 w-64 sm:w-72 rounded-xl bg-[#101523] border border-agnes-border shadow-2xl shadow-black/60 p-3 z-50">
                         <div className="text-[10px] text-agnes-text-muted uppercase tracking-wider mb-2">图像模型</div>
@@ -328,7 +327,6 @@ export default function ChatMode() {
                         </div>
                       </div>
                     )}
-                  </div>
                   <Button variant="ghost" size="sm" onClick={handleOptimize} className="gap-1 text-agnes-cyan">
                     <Sparkles className="w-3.5 h-3.5" />
                     AI 优化提示词

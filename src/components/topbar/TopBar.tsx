@@ -74,7 +74,7 @@ export default function TopBar() {
   }
 
   return (
-    <header className="glass fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 gap-3 overflow-hidden max-w-full">
+    <header className="glass fixed top-0 left-0 right-0 z-50 flex items-center px-4 gap-3 h-14 overflow-x-auto scrollbar-hide">
       <div className="flex items-center gap-2 shrink-0 cursor-pointer">
         <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
