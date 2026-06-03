@@ -97,9 +97,9 @@ export default function TTSMode() {
   return (
     <div className="flex h-full w-full overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0 p-6 gap-4 overflow-y-auto">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {MODEL_TABS.map((tab) => (
-            <button key={tab.key} onClick={() => setModel(tab.key)} className={cn('px-4 py-2 rounded-btn text-sm font-medium transition-all duration-200', model === tab.key ? 'gradient-primary text-white glow-purple' : 'glass text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/10')}>
+            <button key={tab.key} onClick={() => setModel(tab.key)} className={cn('px-4 py-2 rounded-btn text-sm font-medium transition-all duration-200 shrink-0', model === tab.key ? 'gradient-primary text-white glow-purple' : 'glass text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/10')}>
               {tab.label}
             </button>
           ))}
@@ -171,7 +171,7 @@ export default function TTSMode() {
               <span className="text-xs font-semibold text-agnes-text-muted uppercase tracking-wider">合成结果</span>
               <span className="text-xs text-agnes-text-muted">0:12</span>
             </div>
-            <div className="flex items-end gap-[2px] h-14 justify-center">
+            <div className="flex items-end gap-[2px] h-14 justify-center overflow-hidden">
               {waveHeights.map((h, i) => <div key={i} className={cn('w-1 rounded-full transition-all duration-100', playing ? 'bg-agnes-cyan' : 'bg-agnes-purple/60')} style={{ height: `${h}px` }} />)}
             </div>
             <div className="flex items-center gap-3">
@@ -184,7 +184,7 @@ export default function TTSMode() {
         )}
       </div>
 
-      <div className="w-[320px] shrink-0 border-l border-agnes-border bg-agnes-bg-secondary overflow-y-auto">
+      <div className="w-[320px] shrink-0 border-l border-agnes-border bg-agnes-bg-secondary overflow-y-auto hidden md:block">
         <div className="p-4 space-y-5">
           {model === 'mimo-v2.5-tts' && (
             <div>

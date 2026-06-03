@@ -152,7 +152,7 @@ export default function ImageEditor() {
   }
 
   const renderToolPanel = () => (
-    <div className="w-[280px] shrink-0 border-r border-agnes-border bg-agnes-bg-secondary overflow-y-auto">
+    <div className="w-[280px] shrink-0 border-r border-agnes-border bg-agnes-bg-secondary overflow-y-auto min-h-0 hidden md:block">
       <div className="p-4">
         <h2 className="text-sm font-semibold text-agnes-text-primary flex items-center gap-2 mb-4">
           <Paintbrush className="w-4 h-4 text-agnes-purple" />
@@ -190,7 +190,7 @@ export default function ImageEditor() {
     <div className="flex-1 flex flex-col min-w-0 bg-agnes-bg">
       {imageSrc ? (
         <>
-          <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-agnes-border bg-agnes-bg-secondary">
+          <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-agnes-border bg-agnes-bg-secondary flex-wrap">
             <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(z + 25, 400))}><ZoomIn className="w-3.5 h-3.5" /></Button>
             <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(z - 25, 25))}><ZoomOut className="w-3.5 h-3.5" /></Button>
             <Button variant="ghost" size="sm" onClick={() => setZoom(100)}>适应</Button>
@@ -382,7 +382,7 @@ export default function ImageEditor() {
                 key={pos.id}
                 onClick={() => setWmPosition(pos.id)}
                 className={cn(
-                  'px-2 py-1.5 text-[10px] rounded-lg border transition-all',
+                  'px-2 py-1.5 text-[10px] rounded-lg border transition-all shrink-0',
                   wmPosition === pos.id
                     ? 'bg-agnes-purple/15 border-agnes-purple/50 text-agnes-purple'
                     : 'bg-agnes-card border-agnes-border text-agnes-text-secondary hover:border-agnes-border-hover'
@@ -517,7 +517,7 @@ export default function ImageEditor() {
     }
 
     return (
-      <div className="w-[300px] shrink-0 border-l border-agnes-border bg-agnes-bg-secondary overflow-y-auto">
+      <div className="w-[300px] shrink-0 border-l border-agnes-border bg-agnes-bg-secondary overflow-y-auto hidden lg:block">
         <div className="p-4 space-y-4">
           <h3 className="text-sm font-semibold text-agnes-text-primary flex items-center gap-2">
             {ToolIcon && <ToolIcon className="w-4 h-4 text-agnes-purple" />}

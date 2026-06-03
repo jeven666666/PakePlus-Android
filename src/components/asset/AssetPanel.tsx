@@ -361,7 +361,7 @@ export default function AssetPanel() {
                         {templateTypeMap[tpl.type]}
                       </Chip>
                     </div>
-                    <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+                    <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2 flex-wrap">
                       <Button
                         variant="primary"
                         size="sm"
@@ -403,8 +403,8 @@ export default function AssetPanel() {
 
         {batchMode && selectedIds.size > 0 && activeTab !== 'templates' && (
           <div className="absolute bottom-3 left-3 right-3 z-20 glass rounded-xl p-3 flex items-center justify-between shadow-lg animate-slide-up">
-            <span className="text-xs font-medium text-agnes-text-primary">已选 {selectedIds.size} 项</span>
-            <div className="flex gap-1.5">
+            <span className="text-xs font-medium text-agnes-text-primary shrink-0">已选 {selectedIds.size} 项</span>
+            <div className="flex gap-1.5 flex-wrap justify-end">
               <Button variant="primary" size="sm" className="text-[11px]" onClick={() => handleBatchAction('download')}>
                 <Download className="w-3 h-3 mr-1" />全部下载
               </Button>
@@ -428,7 +428,7 @@ export default function AssetPanel() {
             <HardDrive className="w-3.5 h-3.5" />
             <span>存储空间</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowUpgradeCard(!showUpgradeCard)}
               className="text-xs text-agnes-cyan hover:text-agnes-purple transition-colors flex items-center gap-0.5"

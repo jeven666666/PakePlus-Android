@@ -38,7 +38,7 @@ function ToastMessage({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: 
   }, [toast.id, onDismiss])
 
   return (
-    <div className={cn('flex items-start gap-3 p-3 rounded-card border glass animate-slide-up', colorMap[toast.type])}>
+    <div className={cn('flex items-start gap-3 p-3 rounded-card border bg-[#101523] animate-slide-up', colorMap[toast.type])}>
       <Icon className={cn('w-5 h-5 mt-0.5 shrink-0', textColorMap[toast.type])} />
       <p className="flex-1 text-sm text-agnes-text-primary">{toast.message}</p>
       <button onClick={() => onDismiss(toast.id)} className="p-0.5 rounded hover:bg-white/10 shrink-0" aria-label="关闭通知">

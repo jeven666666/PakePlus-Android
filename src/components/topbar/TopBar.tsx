@@ -83,10 +83,12 @@ export default function TopBar() {
               <stop offset="100%" stopColor="#00D4FF"/>
             </linearGradient>
           </defs>
-          <path d="M25 80L42 20H58C68 20 75 27 75 38C75 48 70 55 62 58L78 82" stroke="url(#logoGrad)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M25 80L42 20H58C68 20 75 27 75 38C75 48 70 55 62 58L78 82" stroke="url(#logoGrad)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
           <path d="M72 18L76 26L84 22L77 29L83 34L74 32L66 36L71 28Z" fill="#00D4FF"/>
           <circle cx="86" cy="14" r="3" fill="#00D4FF"/>
         </svg>
+        <span className="gradient-text text-lg font-bold tracking-tight">Agnes AI</span>
+        <span className="text-agnes-text-muted text-sm font-light">Studio</span>
       </div>
 
       <div className="w-px h-6 bg-agnes-border mx-1" />
@@ -95,7 +97,7 @@ export default function TopBar() {
         <select
           value={currentModelId ?? ''}
           onChange={(e) => setCurrentModel(e.target.value)}
-          className="h-8 pl-3 pr-7 text-sm rounded-input bg-agnes-card border border-agnes-border text-agnes-text-primary appearance-none cursor-pointer hover:border-agnes-border-hover focus:outline-none focus:border-agnes-purple/50 transition-colors"
+          className="h-8 pl-3 pr-7 text-sm rounded-input bg-agnes-card border border-agnes-border text-agnes-text-primary appearance-none cursor-pointer hover:border-agnes-border-hover focus:outline-none focus:border-agnes-purple/50 transition-colors max-w-[160px] truncate"
           aria-label="选择模型"
         >
           {models.filter((m) => m.enabled).map((m) => (
@@ -109,7 +111,7 @@ export default function TopBar() {
 
       <div className="w-px h-6 bg-agnes-border mx-1" />
 
-      <nav className="flex items-center gap-0.5 overflow-auto" role="tablist">
+      <nav className="flex items-center gap-0.5 overflow-auto scrollbar-hide" role="tablist">
         {MODE_TABS.map(({ mode, label, icon: Icon }) => {
           const isActive = currentMode === mode
           return (
@@ -118,7 +120,7 @@ export default function TopBar() {
               role="tab"
               aria-selected={isActive}
               onClick={() => setCurrentMode(mode)}
-              className={`flex items-center gap-1.5 h-8 px-3 text-sm rounded-input transition-all duration-200 ${
+              className={`flex items-center gap-1.5 h-8 px-2 sm:px-3 text-sm rounded-input transition-all duration-200 whitespace-nowrap ${
                 isActive
                   ? mode === 'chat'
                     ? 'bg-agnes-cyan/20 text-agnes-cyan border border-agnes-cyan/40'
@@ -129,7 +131,7 @@ export default function TopBar() {
               }`}
             >
               <Icon size={14} />
-              {label}
+              <span className="hidden sm:inline">{label}</span>
             </button>
           )
         })}
@@ -161,7 +163,7 @@ export default function TopBar() {
       <div className="flex items-center gap-3 shrink-0">
         <button
           onClick={testApiConnection}
-          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-md border border-transparent hover:border-agnes-border"
+          className="hidden lg:flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-md border border-transparent hover:border-agnes-border"
           aria-label="测试API连接"
         >
           {apiStatus === 'testing' ? (
@@ -182,7 +184,7 @@ export default function TopBar() {
           )}
         </button>
 
-        <div className="flex items-center gap-1.5 text-xs text-agnes-text-secondary">
+        <div className="hidden lg:flex items-center gap-1.5 text-xs text-agnes-text-secondary">
           <span className="font-mono">128 / 5000 积分</span>
         </div>
 
@@ -212,7 +214,7 @@ export default function TopBar() {
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-agnes-bg-secondary border border-agnes-border shadow-2xl shadow-black/40 py-2 z-[100] backdrop-blur-xl">
+            <div className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-[#101523] border border-agnes-border shadow-2xl shadow-black/60 py-2 z-[100]">
               <div className="px-4 py-3">
                 <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
                 <div className="text-xs text-agnes-text-muted mt-0.5">user@agnes.ai</div>

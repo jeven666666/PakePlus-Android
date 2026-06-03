@@ -254,10 +254,10 @@ export default function Settings() {
           <div className="flex items-center justify-between"><span className="text-sm text-agnes-text-secondary">是否启用</span><button onClick={() => setField('enabled', !formData.enabled)} className={cn('relative w-10 h-5 rounded-full transition-colors', formData.enabled ? 'bg-agnes-purple' : 'bg-agnes-border')}><span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform', formData.enabled ? 'translate-x-5' : 'translate-x-0.5')} /></button></div>
           <div className="flex items-center justify-between"><span className="text-sm text-agnes-text-secondary">是否默认</span><button onClick={() => setField('isDefault', !formData.isDefault)} className={cn('relative w-10 h-5 rounded-full transition-colors', formData.isDefault ? 'bg-agnes-purple' : 'bg-agnes-border')}><span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform', formData.isDefault ? 'translate-x-5' : 'translate-x-0.5')} /></button></div>
           <div className="space-y-1.5"><label className="text-xs text-agnes-text-secondary">备注</label><textarea value={formData.remark} onChange={(e) => setField('remark', e.target.value)} rows={2} className="w-full px-3 py-2 text-sm rounded-input bg-agnes-bg-secondary border border-agnes-border text-agnes-text-primary focus:outline-none focus:border-agnes-purple/50 resize-none" /></div>
-          <div className="flex gap-3 pt-2">
-            <Button variant="secondary" onClick={() => setDrawerOpen(false)} className="flex-1">取消</Button>
-            {editingModel && <Button variant="ghost" onClick={handleDrawerTest} loading={testing} className="flex-1"><TestTube className="w-4 h-4" />连通性测试</Button>}
-            <Button onClick={handleSave} className="flex-1">保存</Button>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setDrawerOpen(false)} className="flex-1 min-w-[80px]">取消</Button>
+            {editingModel && <Button variant="ghost" onClick={handleDrawerTest} loading={testing} className="flex-1 min-w-[100px]"><TestTube className="w-4 h-4" />连通性测试</Button>}
+            <Button onClick={handleSave} className="flex-1 min-w-[80px]">保存</Button>
           </div>
         </div>
       </Drawer>

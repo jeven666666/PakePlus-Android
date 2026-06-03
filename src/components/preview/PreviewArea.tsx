@@ -166,7 +166,7 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
   }, [menuOpen])
 
   return (
-    <div className="shrink-0 flex items-center justify-center gap-1 px-4 py-2 border-t border-agnes-border relative">
+    <div className="shrink-0 flex items-center justify-center gap-1 px-4 py-2 border-t border-agnes-border relative overflow-x-auto flex-nowrap scrollbar-hide">
       {actions.map((action) => {
         const isFavorite = action.icon === Heart
         const isSelect = action.label === '多选'
@@ -175,7 +175,7 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
         if (isMore && menuOpen) {
           return (
             <div key={action.label} ref={menuRef} className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50">
-              <div className="bg-agnes-card border border-agnes-border rounded-xl shadow-2xl p-4 w-[520px] max-h-[400px] overflow-y-auto">
+              <div className="bg-agnes-card border border-agnes-border rounded-xl shadow-2xl p-4 max-w-[520px] w-[90vw] max-h-[400px] overflow-y-auto">
                 {videoEditMenu.map((g) => (
                   <div key={g.group} className="mb-3 last:mb-0">
                     <div className="text-[11px] font-medium text-agnes-text-muted uppercase tracking-wider mb-1.5">{g.group}</div>
@@ -220,7 +220,7 @@ function VersionThumbnails({ activeIndex, onSelect, selectMode, selectedItems, o
   activeIndex: number; onSelect: (i: number) => void; selectMode: boolean; selectedItems: Set<number>; onToggleSelect: (i: number) => void
 }) {
   return (
-    <div className="shrink-0 max-h-[120px] flex items-center gap-2 px-4 py-2 overflow-x-auto border-t border-agnes-border">
+    <div className="shrink-0 min-h-0 max-h-[120px] flex items-center gap-2 px-4 py-2 overflow-x-auto border-t border-agnes-border">
       {mockThumbnails.map((thumb, i) => (
         <button key={thumb.id} onClick={() => selectMode ? onToggleSelect(i) : onSelect(i)}
           className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 relative ${i === activeIndex ? 'border-agnes-purple glow-purple' : selectedItems.has(i) ? 'border-agnes-purple bg-agnes-purple/10' : 'border-transparent hover:border-agnes-border-hover'}`}
