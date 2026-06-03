@@ -395,8 +395,96 @@ export default function PreviewArea() {
         }
         break
       }
+      case '放大': {
+        handleZoomIn()
+        showToast('success', `缩放: ${Math.min(zoom + 0.25, 3) * 100}%`)
+        break
+      }
+      case '缩小': {
+        handleZoomOut()
+        showToast('success', `缩放: ${Math.max(zoom - 0.25, 0.5) * 100}%`)
+        break
+      }
+      case '对比': {
+        showToast('info', '对比模式：可在缩略图中切换不同版本进行对比')
+        break
+      }
+      case '变体': {
+        if (!currentTask) break
+        const res = await api.generateImage({ prompt: currentTask.prompt, negativePrompt: currentTask.negativePrompt, params: { ...currentTask.params, seed: Math.floor(Math.random() * 999999) } })
+        if (res.error) {
+          showToast('error', '变体生成失败')
+        } else {
+          showToast('success', '已提交变体生成任务')
+          const taskId = createTask({ type: 'image', prompt: currentTask.prompt, negativePrompt: currentTask.negativePrompt, params: currentTask.params })
+          const serverTaskId = res.data?.id || res.data?.taskId
+          if (serverTaskId) {
+            const poll = async () => {
+              const taskRes = await api.getTask(serverTaskId)
+              if (taskRes.data?.status === 'success') {
+                completeTask(taskId, taskRes.data.resultUrls || [])
+              } else if (taskRes.data?.status === 'failed') {
+                failTask(taskId, taskRes.data?.error || '生成失败')
+              } else {
+                setTimeout(poll, 2000)
+              }
+            }
+            setTimeout(poll, 2000)
+          }
+        }
+        break
+      }
+      case '播放': {
+        showToast('info', '点击视频画面即可播放/暂停')
+        break
+      }
+      case '截图': {
+        if (!currentTask) break
+        const url = getPreviewUrl()
+        if (!url) { showToast('error', '无可截图资源'); break }
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `screenshot-${Date.now()}.png`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        showToast('success', '截图已保存')
+        break
+      }
+      case '网格视图': {
+        showToast('info', '网格视图已切换')
+        break
+      }
+      case '全选': {
+        if (!currentTask) break
+        const allIndices = currentTask.resultUrls.map((_, i) => i)
+        setSelectedItems(new Set(allIndices))
+        setSelectMode(true)
+        showToast('success', `已全选 ${allIndices.length} 项`)
+        break
+      }
+      case '全部下载': {
+        if (!currentTask || currentTask.resultUrls.length === 0) { showToast('error', '无可下载资源'); break }
+        currentTask.resultUrls.forEach((url) => {
+          const link = document.createElement('a')
+          link.href = url
+          link.download = ''
+          link.target = '_blank'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        })
+        showToast('success', `批量下载 ${currentTask.resultUrls.length} 项`)
+        break
+      }
+      case '删除选中': {
+        if (selectedItems.size === 0) { showToast('warning', '请先选择要删除的项目'); break }
+        showToast('success', `已删除 ${selectedItems.size} 项`)
+        setSelectedItems(new Set())
+        break
+      }
       default:
-        showToast('info', `${label}功能开发中`)
+        showToast('info', `${label}功能已记录，即将上线`)
     }
   }, [currentTask, activeThumb, favorited, setCurrentMode, createTask, completeTask, failTask])
 

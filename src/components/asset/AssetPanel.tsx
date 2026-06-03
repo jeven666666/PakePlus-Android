@@ -768,7 +768,15 @@ export default function AssetPanel() {
               <Progress value={storageRatio} max={1} size="sm" />
             </div>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => showToast('info', '数据迁移功能即将上线，敬请期待')}>
+              <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={async () => {
+                try {
+                  const assets = await api.getAssets()
+                  const count = assets.data?.assets?.length ?? 0
+                  showToast('info', `当前共 ${count} 个资产，迁移功能需配置目标存储后使用`)
+                } catch {
+                  showToast('error', '获取资产信息失败')
+                }
+              }}>
                 迁移数据
               </Button>
               <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => setShowClearConfirm(true)}>
