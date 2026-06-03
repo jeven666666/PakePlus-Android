@@ -153,9 +153,10 @@ function ShimmerPlaceholder() {
   )
 }
 
-function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectMode, onSelectModeToggle }: {
+function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectMode, onSelectModeToggle, currentTask }: {
   actions: { icon: typeof Sparkles; label: string }[]; favorited: boolean; onToggleFavorite: () => void;
-  onAction: (label: string) => void; selectMode: boolean; onSelectModeToggle: () => void
+  onAction: (label: string) => void; selectMode: boolean; onSelectModeToggle: () => void;
+  currentTask?: any
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
@@ -626,7 +627,7 @@ export default function PreviewArea() {
           <ImagePreview url={previewUrl} zoom={zoom} onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
         )}
       </div>
-      <ActionToolbar actions={toolbar} favorited={favorited} onToggleFavorite={handleToggleFavorite} onAction={handleAction} selectMode={selectMode} onSelectModeToggle={toggleSelectMode} />
+      <ActionToolbar actions={toolbar} favorited={favorited} onToggleFavorite={handleToggleFavorite} onAction={handleAction} selectMode={selectMode} onSelectModeToggle={toggleSelectMode} currentTask={currentTask} />
       <VersionThumbnails activeIndex={activeThumb} onSelect={setActiveThumb} selectMode={selectMode} selectedItems={selectedItems} onToggleSelect={toggleSelectItem} resultUrls={currentTask.resultUrls} />
       <TaskLog task={currentTask} />
     </div>
