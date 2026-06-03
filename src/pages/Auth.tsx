@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import api from '../utils/api';
 
@@ -254,7 +255,14 @@ export default function AuthPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMessage, setForgotMessage] = useState('');
-  const { login, register, loading, error, clearError } = useAuthStore();
+  const { login, register, loading, error, clearError, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

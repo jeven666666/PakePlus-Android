@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-const CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000';
+const CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:5174,http://localhost:3000';
 app.use(cors({
   origin: CORS_ORIGINS.split(',').map(s => s.trim()),
   credentials: true,
