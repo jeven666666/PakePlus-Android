@@ -5,7 +5,7 @@ import useAppStore from '@/store/useAppStore'
 import {
   Sparkles, Play, Pause, ZoomIn, ZoomOut, Columns2, RefreshCw, Pencil, Copy, Heart,
   Download, MoreHorizontal, ChevronDown, ChevronUp, Volume2, VolumeX, ImagePlus, Video,
-  Layers, Camera, Grid3x3, CheckSquare, Trash2, Mic,
+  Layers, Camera, Grid3X3, CheckSquare, Trash2, Mic,
   Scissors, Split, Film, Gauge, RotateCcw, Type as WandIcon, Music, Volume2 as VolIcon,
   Palette, Crop, Maximize2, Minimize2, RotateCw, Droplet, Clapperboard, Users, Layers as LayersIcon,
 } from 'lucide-react'
