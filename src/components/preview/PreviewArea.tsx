@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import useTaskStore from '@/store/useTaskStore'
 import useAppStore from '@/store/useAppStore'
 import {
   Sparkles, Play, Pause, ZoomIn, ZoomOut, Columns2, RefreshCw, Pencil, Copy, Heart,
   Download, MoreHorizontal, ChevronDown, ChevronUp, Volume2, VolumeX, ImagePlus, Video,
-  Layers, Camera, Grid3X3, CheckSquare, Trash2, Mic,
+  Layers, Camera, Grid3x3, CheckSquare, Trash2, Mic,
   Scissors, Split, Film, Gauge, RotateCcw, Type as WandIcon, Music, Volume2 as VolIcon,
   Palette, Crop, Maximize2, Minimize2, RotateCw, Droplet, Clapperboard, Users, Layers as LayersIcon,
 } from 'lucide-react'
@@ -157,14 +158,71 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
   onAction: (label: string) => void; selectMode: boolean; onSelectModeToggle: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!menuOpen) return
-    const handler = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false) }
+    if (!menuOpen || !buttonRef.current) return
+
+    const rect = buttonRef.current.getBoundingClientRect()
+    setMenuPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    })
+
+    const handler = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false)
+      }
+    }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
+
+  const renderMenu = () => {
+    if (!menuOpen) return null
+
+    return createPortal(
+      <div
+        ref={menuRef}
+        className="fixed z-[9999] transform -translate-x-1/2"
+        style={{
+          left: menuPosition.x,
+          bottom: window.innerHeight - menuPosition.y
+        }}
+      >
+        <div className="bg-agnes-card border border-agnes-border rounded-xl shadow-2xl p-4 max-w-[520px] w-[90vw] max-h-[400px] overflow-y-auto">
+          {videoEditMenu.map((g) => (
+            <div key={g.group} className="mb-3 last:mb-0">
+              <div className="text-[11px] font-medium text-agnes-text-muted uppercase tracking-wider mb-1.5">{g.group}</div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {g.items.map((item) => {
+                  const ItemIcon = item.icon
+                  return (
+                    <button key={item.label} onClick={() => {
+                      const editTaskId = useTaskStore.getState().createTask({ type: 'video', prompt: `视频编辑: ${item.label}`, negativePrompt: '', params: { editType: item.label } })
+                      useTaskStore.getState().setCurrentTask(editTaskId)
+                      showToast('success', `已提交「${item.label}」任务`)
+                      setMenuOpen(false)
+                    }}
+                      className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-agnes-bg-secondary transition-colors duration-150">
+                      <ItemIcon className="w-4 h-4 text-agnes-text-secondary" />
+                      <span className="text-[10px] text-agnes-text-muted whitespace-nowrap">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>,
+      document.body
+    )
+  }
 
   return (
     <div className="shrink-0 flex items-center justify-center gap-1 px-4 py-2 border-t border-agnes-border relative overflow-x-auto flex-nowrap scrollbar-hide">
@@ -173,52 +231,38 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
         const isSelect = action.label === '多选'
         const isMore = action.label === '更多'
         const Icon = action.icon
+
+        if (isMore) {
+          return (
+            <div key={action.label} className="relative">
+              <button
+                ref={buttonRef}
+                onClick={() => setMenuOpen((o) => !o)}
+                className={`relative group/btn w-9 h-9 rounded-btn flex items-center justify-center text-agnes-text-muted hover:text-agnes-text-primary hover:bg-white/5 transition-all duration-200 ${menuOpen ? 'bg-agnes-purple/15 text-agnes-purple' : ''}`}
+                aria-label={action.label}
+              >
+                <Icon className="w-[18px] h-[18px]" />
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-agnes-card text-agnes-text-secondary opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none border border-agnes-border">{action.label}</span>
+              </button>
+            </div>
+          )
+        }
+
         return (
-          <div key={action.label} className="relative">
-            <button
-              onClick={() => {
-                if (isSelect) onSelectModeToggle()
-                else if (isMore) setMenuOpen((o) => !o)
-                else if (isFavorite) onToggleFavorite()
-                else onAction(action.label)
-              }}
-              className={`relative group/btn w-9 h-9 rounded-btn flex items-center justify-center text-agnes-text-muted hover:text-agnes-text-primary hover:bg-white/5 transition-all duration-200 ${isSelect && selectMode ? 'bg-agnes-purple/15 text-agnes-purple' : ''} ${isMore && menuOpen ? 'bg-agnes-purple/15 text-agnes-purple' : ''}`}
-              aria-label={action.label}
-            >
-              {isSelect && selectMode ? <CheckSquare className="w-[18px] h-[18px]" /> : isFavorite && favorited ? <Heart className="w-[18px] h-[18px] text-agnes-error fill-agnes-error" /> : <Icon className="w-[18px] h-[18px]" />}
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-agnes-card text-agnes-text-secondary opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none border border-agnes-border">{action.label}</span>
-            </button>
-            {isMore && menuOpen && (
-              <div ref={menuRef} className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50">
-                <div className="bg-agnes-card border border-agnes-border rounded-xl shadow-2xl p-4 max-w-[520px] w-[90vw] max-h-[400px] overflow-y-auto">
-                  {videoEditMenu.map((g) => (
-                    <div key={g.group} className="mb-3 last:mb-0">
-                      <div className="text-[11px] font-medium text-agnes-text-muted uppercase tracking-wider mb-1.5">{g.group}</div>
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {g.items.map((item) => {
-                          const ItemIcon = item.icon
-                          return (
-                            <button key={item.label} onClick={() => {
-                              const editTaskId = useTaskStore.getState().createTask({ type: 'video', prompt: `视频编辑: ${item.label}`, negativePrompt: '', params: { editType: item.label } })
-                              useTaskStore.getState().setCurrentTask(editTaskId)
-                              showToast('success', `已提交「${item.label}」任务`)
-                              setMenuOpen(false)
-                            }}
-                              className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-agnes-bg-secondary transition-colors duration-150">
-                              <ItemIcon className="w-4 h-4 text-agnes-text-secondary" />
-                              <span className="text-[10px] text-agnes-text-muted whitespace-nowrap">{item.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <button key={action.label}
+            onClick={() => {
+              if (isSelect) onSelectModeToggle()
+              else if (isFavorite) onToggleFavorite()
+              else onAction(action.label)
+            }}
+            className={`relative group/btn w-9 h-9 rounded-btn flex items-center justify-center text-agnes-text-muted hover:text-agnes-text-primary hover:bg-white/5 transition-all duration-200 ${isSelect && selectMode ? 'bg-agnes-purple/15 text-agnes-purple' : ''}`}
+            aria-label={action.label}>
+            {isSelect && selectMode ? <CheckSquare className="w-[18px] h-[18px]" /> : isFavorite && favorited ? <Heart className="w-[18px] h-[18px] text-agnes-error fill-agnes-error" /> : <Icon className="w-[18px] h-[18px]" />}
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-[10px] whitespace-nowrap bg-agnes-card text-agnes-text-secondary opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none border border-agnes-border">{action.label}</span>
+          </button>
         )
       })}
+      {renderMenu()}
     </div>
   )
 }

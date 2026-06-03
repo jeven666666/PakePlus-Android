@@ -7,12 +7,31 @@ import ChatMode from '@/components/chat/ChatMode'
 import TTSMode from '@/components/tts/TTSMode'
 import ImageEditor from '@/components/editor/ImageEditor'
 import useAppStore from '@/store/useAppStore'
+import useTaskStore from '@/store/useTaskStore'
 
 export default function Studio() {
   const { currentMode, leftPanelCollapsed, rightPanelCollapsed, toggleLeftPanel, toggleRightPanel } = useAppStore()
+  const { createTask, completeTask, tasks, currentTaskId } = useTaskStore()
   const isChat = currentMode === 'chat'
   const isTTS = currentMode === 'tts'
   const isEditor = currentMode === 'image-editor'
+
+  useEffect(() => {
+    // 添加示例任务用于测试
+    if (tasks.length === 0) {
+      const taskId = createTask({
+        type: 'video',
+        prompt: '测试视频 - 点击更多按钮查看菜单',
+        negativePrompt: '',
+        params: { model: 'test' }
+      })
+      setTimeout(() => {
+        completeTask(taskId, [
+          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60'
+        ])
+      }, 500)
+    }
+  }, [createTask, completeTask, tasks.length])
 
   useEffect(() => {
     const handleResize = () => {
