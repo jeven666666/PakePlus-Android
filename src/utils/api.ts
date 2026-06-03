@@ -26,7 +26,8 @@ class ApiClient {
     return this.token;
   }
 
-  private async request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  private async request<T>(path: string, options: RequestInit = {}, maxRetries = 0): Promise<ApiResponse<T>> {
+    const url = `${API_BASE}${path}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
@@ -36,22 +37,41 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    try {
-      const res = await fetch(`${API_BASE}${path}`, {
-        ...options,
-        headers,
-      });
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+        const res = await fetch(url, { ...options, headers, signal: controller.signal });
+        clearTimeout(timeout);
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok) {
-        return { error: data.error || '请求失败', status: res.status };
+        if (!res.ok) {
+          if (res.status === 401) {
+            this.setToken(null);
+            window.location.href = '/auth';
+          }
+          return { error: data.error || '请求失败', status: res.status };
+        }
+
+        return { data, status: res.ok ? 200 : res.status };
+      } catch (err: any) {
+        lastError = err;
+        if (err.name === 'AbortError') {
+          lastError = new Error('请求超时');
+          break;
+        }
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
       }
-
-      return { data, status: res.status };
-    } catch (err: any) {
-      return { error: err.message || '网络错误', status: 0 };
     }
+    return { error: lastError?.message || '网络错误', status: 0 };
+  }
+
+  private async retryRequest<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    return this.request<T>(path, options, 2);
   }
 
   // Auth
@@ -91,6 +111,20 @@ class ApiClient {
     });
   }
 
+  async forgotPassword(email: string) {
+    return this.request<any>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(email: string, token: string, newPassword: string) {
+    return this.request<any>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, token, newPassword }),
+    });
+  }
+
   // Tasks
   async getTasks(params?: { status?: string; type?: string; limit?: number; offset?: number }) {
     const query = new URLSearchParams();
@@ -122,7 +156,7 @@ class ApiClient {
 
   // Images
   async generateImage(data: { prompt: string; negativePrompt?: string; params?: any; model?: string }) {
-    return this.request<any>('/images/generate', {
+    return this.retryRequest<any>('/images/generate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -130,7 +164,7 @@ class ApiClient {
 
   // Videos
   async generateVideo(data: { prompt: string; negativePrompt?: string; params?: any; model?: string }) {
-    return this.request<any>('/videos/generate', {
+    return this.retryRequest<any>('/videos/generate', {
       method: 'POST',
       body: JSON.stringify(data),
     });

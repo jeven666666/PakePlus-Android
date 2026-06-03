@@ -129,4 +129,34 @@ router.delete('/:id', authMiddleware, (req: Request, res: Response) => {
   }
 });
 
+// Retry a failed task
+router.post('/:id/retry', authMiddleware, (req: Request, res: Response) => {
+  try {
+    const task: any = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user!.userId);
+    if (!task) {
+      res.status(404).json({ error: '任务不存在' });
+      return;
+    }
+    if (task.status !== 'failed') {
+      res.status(400).json({ error: '只能重试失败的任务' });
+      return;
+    }
+    const user: any = db.prepare('SELECT credits FROM users WHERE id = ?').get(req.user!.userId);
+    if (user.credits < task.credits_cost) {
+      res.status(402).json({ error: '积分不足' });
+      return;
+    }
+    const transaction = db.transaction(() => {
+      db.prepare("UPDATE tasks SET status = 'submitted', progress = 0, error_message = '', updated_at = unixepoch() WHERE id = ?").run(req.params.id);
+      db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(task.credits_cost, req.user!.userId);
+      db.prepare('INSERT INTO credits_history (id, user_id, type, amount, description) VALUES (?, ?, ?, ?, ?)')
+        .run(uuid(), req.user!.userId, 'consume', -task.credits_cost, `重试任务`);
+    });
+    transaction();
+    res.json({ success: true, id: req.params.id });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

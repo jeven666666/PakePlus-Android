@@ -58,9 +58,12 @@ export default function TTSMode() {
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const [audioProgress, setAudioProgress] = useState(0)
+  const [audioUrl, setAudioUrl] = useState('')
   const [waveHeights, setWaveHeights] = useState<number[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const animRef = useRef<number>(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     if (playing) {
@@ -104,6 +107,9 @@ export default function TTSMode() {
           setGenerating(false)
           setGenerated(true)
           setWaveHeights(Array.from({ length: 50 }, () => 8 + Math.random() * 20))
+          if (taskRes.data.result?.audioUrl) {
+            setAudioUrl(taskRes.data.result.audioUrl)
+          }
           showToast('success', '语音合成完成')
         } else if (taskRes.data?.status === 'failed') {
           clearInterval(poll)
@@ -208,11 +214,29 @@ export default function TTSMode() {
             <div className="flex items-end gap-[2px] h-14 justify-center overflow-hidden">
               {waveHeights.map((h, i) => <div key={i} className={cn('w-1 rounded-full transition-all duration-100', playing ? 'bg-agnes-cyan' : 'bg-agnes-purple/60')} style={{ height: `${h}px` }} />)}
             </div>
+            {audioUrl && (
+              <audio
+                ref={(el) => { audioRef.current = el }}
+                src={audioUrl}
+                onEnded={() => setPlaying(false)}
+                onTimeUpdate={() => { if (audioRef.current) setAudioProgress(audioRef.current.currentTime / (audioRef.current.duration || 1)) }}
+              />
+            )}
+            <div className="w-full h-1.5 bg-agnes-card rounded-full overflow-hidden">
+              <div className="h-full gradient-primary rounded-full transition-all duration-200" style={{ width: `${audioProgress * 100}%` }} />
+            </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setPlaying(!playing)} className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center hover:shadow-[0_0_20px_rgba(124,92,255,0.4)] transition-all">
+              <button
+                onClick={() => {
+                  if (!audioUrl) { setPlaying(!playing); return }
+                  if (playing) { audioRef.current?.pause(); setPlaying(false) }
+                  else { audioRef.current?.play(); setPlaying(true) }
+                }}
+                className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center hover:shadow-[0_0_20px_rgba(124,92,255,0.4)] transition-all"
+              >
                 {playing ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
               </button>
-              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => { const link = document.createElement('a'); link.href = '#'; link.download = 'tts-output.wav'; link.click(); showToast('success', '下载已开始') }}><Download className="w-3.5 h-3.5" />WAV</Button>
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => { const link = document.createElement('a'); link.href = audioUrl || '#'; link.download = 'tts-output.wav'; link.click(); showToast('success', '下载已开始') }}><Download className="w-3.5 h-3.5" />WAV</Button>
             </div>
           </div>
         )}

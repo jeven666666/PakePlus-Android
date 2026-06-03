@@ -161,4 +161,49 @@ router.put('/me/password', authMiddleware, (req: Request, res: Response) => {
   }
 });
 
+// Forgot password - reset with verification code
+router.post('/forgot-password', (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ error: '请输入邮箱' });
+      return;
+    }
+    const user: any = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (!user) {
+      // Don't reveal whether email exists for security
+      res.json({ success: true, message: '如果该邮箱已注册，将收到重置邮件' });
+      return;
+    }
+    // In production, send email with reset token
+    // For now, generate a temporary reset token
+    const resetToken = uuid().slice(0, 8).toUpperCase();
+    db.prepare('UPDATE users SET signature = ? WHERE id = ?').run(`RESET:${resetToken}`, user.id);
+    res.json({ success: true, message: '重置码已生成', hint: resetToken });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Reset password with token
+router.post('/reset-password', (req: Request, res: Response) => {
+  try {
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword || newPassword.length < 6) {
+      res.status(400).json({ error: '参数不完整或密码太短' });
+      return;
+    }
+    const user: any = db.prepare('SELECT id, signature FROM users WHERE email = ?').get(email);
+    if (!user || user.signature !== `RESET:${token}`) {
+      res.status(400).json({ error: '重置码无效' });
+      return;
+    }
+    const hash = bcrypt.hashSync(newPassword, 10);
+    db.prepare('UPDATE users SET password_hash = ?, signature = ?, updated_at = unixepoch() WHERE id = ?').run(hash, '', user.id);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

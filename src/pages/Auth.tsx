@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+import api from '../utils/api';
 
 // Spiral galaxy particle animation with sci-fi tech feel
 function ParticleBackground() {
@@ -249,6 +250,10 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState('');
   const { login, register, loading, error, clearError } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -340,6 +345,15 @@ export default function AuthPage() {
                 placeholder="至少6位"
                 className="w-full px-4 py-2.5 rounded-lg bg-agnes-bg border border-agnes-border text-agnes-text-primary placeholder:text-agnes-text-muted focus:outline-none focus:border-agnes-purple/50 transition-colors"
               />
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(true); setForgotMessage(''); setForgotEmail(''); }}
+                  className="text-xs text-agnes-cyan hover:underline mt-1.5 float-right"
+                >
+                  忘记密码?
+                </button>
+              )}
             </div>
 
             <button
@@ -361,6 +375,68 @@ export default function AuthPage() {
             </button>
           </div>
         </div>
+
+        {showForgot && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="glass-strong rounded-2xl p-6 w-[360px] border border-agnes-border shadow-xl animate-fade-in">
+              <h3 className="text-lg font-semibold text-agnes-text-primary mb-4">重置密码</h3>
+              {forgotMessage ? (
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+                    {forgotMessage}
+                  </div>
+                  <button
+                    onClick={() => setShowForgot(false)}
+                    className="w-full py-2 rounded-lg gradient-primary text-white font-medium hover:opacity-90 transition-opacity"
+                  >
+                    返回登录
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-agnes-text-secondary">输入注册邮箱，我们将发送重置验证码</p>
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-2.5 rounded-lg bg-agnes-bg border border-agnes-border text-agnes-text-primary placeholder:text-agnes-text-muted focus:outline-none focus:border-agnes-purple/50 transition-colors"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowForgot(false)}
+                      className="flex-1 py-2 rounded-lg border border-agnes-border text-agnes-text-secondary hover:bg-white/5 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!forgotEmail.trim()) return;
+                        setForgotLoading(true);
+                        try {
+                          const res = await api.forgotPassword(forgotEmail);
+                          if (res.error) {
+                            setForgotMessage(res.error);
+                          } else {
+                            setForgotMessage('重置验证码已发送至您的邮箱，请查收');
+                          }
+                        } catch {
+                          setForgotMessage('发送失败，请稍后重试');
+                        } finally {
+                          setForgotLoading(false);
+                        }
+                      }}
+                      disabled={forgotLoading}
+                      className="flex-1 py-2 rounded-lg gradient-primary text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {forgotLoading ? '发送中...' : '发送验证码'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <p className="text-center text-xs text-agnes-text-muted mt-6">
           登录即表示同意 Agnes AI 服务条款和隐私政策

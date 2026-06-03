@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import path from 'path';
 import fs from 'fs';
 
@@ -12,8 +13,44 @@ app.use(cors({
   origin: CORS_ORIGINS.split(',').map(s => s.trim()),
   credentials: true,
 }));
-app.use(express.json({ limit: '50mb' }));
+app.use(compression());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting (in-memory, per-IP)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+app.use('/api', (req, _res, next) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + 60000 });
+  } else {
+    entry.count++;
+    if (entry.count > 100) {
+      _res.status(429).json({ error: '请求过于频繁，请稍后再试' });
+      return;
+    }
+  }
+  next();
+});
+
+// Request logging
+app.use((req, _res, next) => {
+  const start = Date.now();
+  _res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (req.path.startsWith('/api')) {
+      console.log(`${req.method} ${req.path} ${_res.statusCode} ${duration}ms`);
+    }
+  });
+  next();
+});
+
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: Date.now() });
+});
 
 // Serve uploaded files
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -23,7 +60,7 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 // Serve frontend static files in production
 const DIST_DIR = path.resolve(__dirname, '../../dist');
 if (fs.existsSync(DIST_DIR)) {
-  app.use(express.static(DIST_DIR));
+  app.use(express.static(DIST_DIR, { maxAge: '7d', etag: true }));
   // SPA fallback: serve index.html for all non-API routes
   app.use((req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
@@ -58,19 +95,17 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/tts', ttsRoutes);
 app.use('/api/editor', editorRoutes);
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now() });
-});
-
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   res.status(500).json({ error: err.message || '服务器内部错误' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Agnes AI Studio API Server running on http://localhost:${PORT}`);
   console.log(`📡 API endpoints available at http://localhost:${PORT}/api/`);
 });
+
+process.on('SIGTERM', () => { console.log('SIGTERM received, shutting down...'); server.close(() => process.exit(0)); });
+process.on('SIGINT', () => { console.log('SIGINT received, shutting down...'); server.close(() => process.exit(0)); });
 
 export default app;

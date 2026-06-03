@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, Download, RefreshCw, Upload, Clock, Image, Video, FileText, HardDrive, CheckSquare, Square, X, Plus, Pencil, Trash2, Crown, ChevronUp } from 'lucide-react'
+import { Heart, Download, RefreshCw, Upload, Clock, Image, Video, FileText, HardDrive, CheckSquare, Square, X, Plus, Pencil, Trash2, Crown, ChevronUp, Search } from 'lucide-react'
 import { api } from '@/utils/api'
 import { useAuthStore } from '@/store/useAuthStore'
 import useTaskStore from '@/store/useTaskStore'
@@ -152,6 +152,9 @@ export default function AssetPanel() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [assets, setAssets] = useState<AssetItem[]>([])
   const [assetsLoading, setAssetsLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [assetPage, setAssetPage] = useState(1)
+  const [hasMoreAssets, setHasMoreAssets] = useState(true)
   const [customTemplates, setCustomTemplates] = useState<TemplateItem[]>([])
   const [templatesLoading, setTemplatesLoading] = useState(false)
   const [showAddTemplate, setShowAddTemplate] = useState(false)
@@ -167,12 +170,21 @@ export default function AssetPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load assets on mount
-  const loadAssets = useCallback(async () => {
+  const loadAssets = useCallback(async (append = false) => {
     setAssetsLoading(true)
     try {
-      const res = await api.getAssets()
+      const limit = 20
+      const offset = append ? assets.length : 0
+      const res = await api.getAssets({ limit, offset })
       if (res.data) {
-        setAssets(res.data)
+        const newAssets = Array.isArray(res.data) ? res.data : res.data.assets || []
+        if (append) {
+          setAssets((prev) => [...prev, ...newAssets])
+        } else {
+          setAssets(newAssets)
+        }
+        setHasMoreAssets(newAssets.length >= limit)
+        setAssetPage(append ? assetPage + 1 : 1)
       } else {
         showToast('error', res.error || '加载资产失败')
       }
@@ -181,7 +193,7 @@ export default function AssetPanel() {
     } finally {
       setAssetsLoading(false)
     }
-  }, [])
+  }, [assets.length, assetPage])
 
   // Load templates on mount
   const loadTemplates = useCallback(async () => {
@@ -220,9 +232,12 @@ export default function AssetPanel() {
   }, [loadAssets, loadTemplates, loadStorage])
 
   // Derive filtered lists from loaded assets
-  const recentAssets = assets.slice(0, 8)
-  const favoriteAssets = assets.filter((a) => a.favorited)
-  const materialAssets = assets.slice(6)
+  const filteredAssets = searchQuery
+    ? assets.filter((a) => a.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : assets
+  const recentAssets = filteredAssets.slice(0, 8)
+  const favoriteAssets = filteredAssets.filter((a) => a.favorited)
+  const materialAssets = filteredAssets.slice(6)
 
   // Use auth store user data for storage if available
   const displayStorageUsed = user?.storageUsed ?? storageUsed
@@ -519,6 +534,19 @@ export default function AssetPanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 relative">
+        {activeTab !== 'templates' && (
+          <div className="mb-3 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-agnes-text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索资产..."
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-input bg-agnes-card border border-agnes-border text-agnes-text-primary placeholder:text-agnes-text-muted focus:outline-none focus:border-agnes-purple/50 transition-colors"
+            />
+          </div>
+        )}
+
         {assetsLoading && assets.length === 0 && (
           <div className="flex items-center justify-center py-12 text-agnes-text-muted text-xs">加载中...</div>
         )}
@@ -562,6 +590,14 @@ export default function AssetPanel() {
                 <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} onFavorite={handleFavorite} onDownload={handleDownload} onReuse={handleReuse} onVideo={handleVideo} />
               ))}
             </div>
+          </div>
+        )}
+
+        {activeTab !== 'templates' && hasMoreAssets && !searchQuery && (
+          <div className="mt-3">
+            <Button variant="secondary" size="sm" className="w-full" onClick={() => loadAssets(true)} loading={assetsLoading}>
+              加载更多
+            </Button>
           </div>
         )}
 
