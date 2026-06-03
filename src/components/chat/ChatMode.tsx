@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Sparkles, Image, Video, Bot, User, MessageSquare, Zap, ArrowRight, Lightbulb, Wand2, Settings2 } from 'lucide-react'
+import { Send, Sparkles, Image, Video, Bot, User, MessageSquare, Zap, ArrowRight, Lightbulb, Wand2, Settings2, FileImage } from 'lucide-react'
 import useAppStore from '@/store/useAppStore'
 import useTaskStore from '@/store/useTaskStore'
 import Chip from '@/components/ui/Chip'
@@ -124,6 +124,22 @@ export default function ChatMode() {
     showToast('success', type === 'image' ? '已创建生图任务' : '已创建视频任务')
   }
 
+  const handleDirectGenerate = (type: 'image' | 'video', prompt: string) => {
+    createTask({ type, prompt, negativePrompt: '', params: {} })
+    if (type === 'image') {
+      useAppStore.getState().setCurrentMode('text-to-image')
+      showToast('success', '已创建图片生成任务并切换到文生图模式')
+    } else {
+      useAppStore.getState().setCurrentMode('text-to-video')
+      showToast('success', '已创建视频生成任务并切换到文生视频模式')
+    }
+  }
+
+  const handleConvertToMaterial = () => {
+    useAppStore.getState().setCurrentMode('image-to-image')
+    showToast('success', '已切换到图生图模式，可作为参考素材')
+  }
+
   const handleOptimize = () => {
     if (!input.trim()) return
     sendMessage(`请优化这个提示词：${input}`)
@@ -170,15 +186,44 @@ export default function ChatMode() {
                   </div>
                 )}
                 {msg.role === 'assistant' && msg.taskAction && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleConvertTask(msg.taskAction!.type, msg.taskAction!.prompt)}
-                    className="gap-1.5"
-                  >
-                    {msg.taskAction.type === 'image' ? <Image className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
-                    转为生图任务
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleConvertTask(msg.taskAction!.type, msg.taskAction!.prompt)}
+                      className="gap-1.5"
+                    >
+                      {msg.taskAction.type === 'image' ? <Image className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
+                      转为{msg.taskAction.type === 'image' ? '生图' : '视频'}任务
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDirectGenerate('image', msg.taskAction?.prompt || msg.content)}
+                      className="gap-1 text-xs bg-gradient-to-r from-agnes-purple/20 to-agnes-cyan/20 hover:from-agnes-purple/30 hover:to-agnes-cyan/30 border border-agnes-purple/20"
+                    >
+                      <Image className="w-3.5 h-3.5" />
+                      生成图片
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDirectGenerate('video', msg.taskAction?.prompt || msg.content)}
+                      className="gap-1 text-xs bg-gradient-to-r from-agnes-cyan/20 to-agnes-purple/20 hover:from-agnes-cyan/30 hover:to-agnes-purple/30 border border-agnes-cyan/20"
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      生成视频
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleConvertToMaterial}
+                      className="gap-1 text-xs bg-white/[0.06] hover:bg-white/[0.12] border border-agnes-border"
+                    >
+                      <FileImage className="w-3.5 h-3.5" />
+                      转为素材
+                    </Button>
+                  </div>
                 )}
               </div>
               {msg.role === 'user' && (
@@ -217,7 +262,7 @@ export default function ChatMode() {
                 className="w-full bg-transparent px-4 py-3 text-sm text-agnes-text-primary placeholder:text-agnes-text-muted resize-none focus:outline-none"
               />
               <div className="flex items-center justify-between px-3 pb-3">
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button variant="ghost" size="sm" onClick={handleOptimize} className="gap-1 text-agnes-cyan">
                     <Sparkles className="w-3.5 h-3.5" />
                     AI 优化提示词
@@ -229,6 +274,10 @@ export default function ChatMode() {
                   <Button variant="ghost" size="sm" onClick={() => input.trim() && handleConvertTask('video', input)} className="gap-1">
                     <Video className="w-3.5 h-3.5" />
                     转为视频
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { if (input.trim()) handleConvertToMaterial() }} className="gap-1">
+                    <FileImage className="w-3.5 h-3.5" />
+                    转素材
                   </Button>
                 </div>
                 <Button variant="primary" size="sm" onClick={() => sendMessage()} disabled={!input.trim() || isTyping} className="gap-1.5">

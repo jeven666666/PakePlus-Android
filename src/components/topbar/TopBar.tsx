@@ -75,7 +75,7 @@ export default function TopBar() {
   }
 
   return (
-    <header className="glass fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 gap-3">
+    <header className="glass fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 gap-3 overflow-hidden max-w-full">
       <div className="flex items-center gap-2 shrink-0">
         <Zap size={20} className="text-agnes-cyan" />
         <span className="gradient-text text-lg font-bold tracking-tight">Agnes AI</span>
@@ -102,7 +102,7 @@ export default function TopBar() {
 
       <div className="w-px h-6 bg-agnes-border mx-1" />
 
-      <nav className="flex items-center gap-0.5" role="tablist">
+      <nav className="flex items-center gap-0.5 overflow-auto" role="tablist">
         {MODE_TABS.map(({ mode, label, icon: Icon }) => {
           const isActive = currentMode === mode
           return (
@@ -154,7 +154,7 @@ export default function TopBar() {
       <div className="flex items-center gap-3 shrink-0">
         <button
           onClick={testApiConnection}
-          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-md border border-transparent hover:border-agnes-border"
           aria-label="测试API连接"
         >
           {apiStatus === 'testing' ? (
@@ -206,31 +206,31 @@ export default function TopBar() {
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 rounded-xl glass border border-agnes-border shadow-lg py-1 z-50">
+            <div className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-agnes-bg-secondary border border-agnes-border shadow-2xl shadow-black/40 py-2 z-50 backdrop-blur-xl">
               <div className="px-4 py-3">
                 <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
                 <div className="text-xs text-agnes-text-muted mt-0.5">user@agnes.ai</div>
               </div>
               <div className="h-px bg-agnes-border mx-2" />
-              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Crown size={16} className="text-agnes-warning" />
                 <span>会员中心</span>
                 <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-agnes-warning/20 text-agnes-warning font-medium">Pro 会员</span>
               </button>
-              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Coins size={16} className="text-agnes-cyan" />
                 <span>我的积分</span>
                 <span className="ml-auto text-xs text-agnes-text-muted">2,580 积分</span>
               </button>
-              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Gift size={16} />
                 <span>兑换码</span>
               </button>
-              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <LinkIcon size={16} />
                 <span>邀请链接</span>
               </button>
-              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Ticket size={16} />
                 <span>邀请码</span>
               </button>
@@ -238,7 +238,7 @@ export default function TopBar() {
               <Link
                 to="/settings"
                 onClick={() => setUserMenuOpen(false)}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors"
               >
                 <UserCog size={16} />
                 <span>个人设置</span>

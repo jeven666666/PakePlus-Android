@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Scissors, Eraser, Droplet, Paintbrush, Maximize, Sparkles, Palette, Grid, Smile, Shirt, CreditCard, Expand, Plus, Image, Wand2, Sun, Type, ImagePlus, Layers, ShoppingBag, Clock, Crop, Upload, ZoomIn, ZoomOut, RotateCcw, RotateCw, Video, Download, X, Check } from 'lucide-react'
+import { Scissors, Eraser, Droplet as DropletIcon, Paintbrush, Maximize, Sparkles, Palette, Grid, Smile, Shirt, CreditCard, Expand, Plus, Image, Wand2, Sun, Type, ImagePlus, Layers, ShoppingBag, Clock, Crop, Upload, ZoomIn, ZoomOut, RotateCcw, RotateCw, Video, Download, X, Check, FileImage, Droplet } from 'lucide-react'
 import useAppStore from '@/store/useAppStore'
 import Slider from '@/components/ui/Slider'
 import Select from '@/components/ui/Select'
@@ -12,7 +12,8 @@ const TOOL_GROUPS = [
   { label: '基础编辑', tools: [
     { id: 'cutout', name: 'AI 智能抠图', icon: Scissors },
     { id: 'inpaint', name: '局部重绘消除杂物', icon: Eraser },
-    { id: 'watermark', name: '去除水印', icon: Droplet },
+    { id: 'watermark', name: '去除水印', icon: DropletIcon },
+    { id: 'add-watermark', name: '添加/批量添加水印', icon: Droplet },
     { id: 'repair', name: '画面破损修补', icon: Paintbrush },
   ]},
   { label: '图像增强', tools: [
@@ -58,6 +59,22 @@ const STYLE_OPTIONS = [
   { id: 'pixel', name: '像素风' },
 ]
 
+const WATERMARK_POSITIONS = [
+  { id: 'top-left', label: '左上' },
+  { id: 'top-right', label: '右上' },
+  { id: 'bottom-left', label: '左下' },
+  { id: 'bottom-right', label: '右下' },
+  { id: 'center', label: '居中' },
+  { id: 'tile', label: '平铺' },
+]
+
+const PRESET_COLORS = [
+  { value: '#FFFFFF', label: '白' },
+  { value: '#000000', label: '黑' },
+  { value: '#EF4444', label: '红' },
+  { value: '#3B82F6', label: '蓝' },
+]
+
 export default function ImageEditor() {
   const [selectedTool, setSelectedTool] = useState('cutout')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
@@ -83,6 +100,19 @@ export default function ImageEditor() {
   const [bgColor, setBgColor] = useState('#7C5CFF')
   const [genericStrength, setGenericStrength] = useState(50)
   const [genericQuality, setGenericQuality] = useState('standard')
+
+  const [wmType, setWmType] = useState<'text' | 'image' | 'logo'>('text')
+  const [wmText, setWmText] = useState('')
+  const [wmFontSize, setWmFontSize] = useState(24)
+  const [wmTextColor, setWmTextColor] = useState('#FFFFFF')
+  const [wmTextOpacity, setWmTextOpacity] = useState(60)
+  const [wmPosition, setWmPosition] = useState('bottom-right')
+  const [wmAngle, setWmAngle] = useState(0)
+  const [wmImageScale, setWmImageScale] = useState(100)
+  const [wmImageOpacity, setWmImageOpacity] = useState(60)
+  const [wmBatchApply, setWmBatchApply] = useState(false)
+  const wmFileRef = useRef<HTMLInputElement>(null)
+
   const fileRef = useRef<HTMLInputElement>(null)
   const setCurrentMode = useAppStore((s) => s.setCurrentMode)
 
@@ -270,6 +300,113 @@ export default function ImageEditor() {
       </>
     )
 
+    const renderWatermarkParams = () => (
+      <>
+        <div className="space-y-1.5">
+          <label className="text-xs text-agnes-text-secondary">水印类型</label>
+          <div className="flex gap-1.5">
+            <Chip variant="purple" active={wmType === 'text'} onClick={() => setWmType('text')}>
+              <Type className="w-3 h-3 mr-1" />文字
+            </Chip>
+            <Chip variant="purple" active={wmType === 'image'} onClick={() => setWmType('image')}>
+              <Image className="w-3 h-3 mr-1" />图片
+            </Chip>
+            <Chip variant="purple" active={wmType === 'logo'} onClick={() => setWmType('logo')}>
+              <FileImage className="w-3 h-3 mr-1" />Logo
+            </Chip>
+          </div>
+        </div>
+
+        {wmType === 'text' && (
+          <>
+            <div className="space-y-1.5">
+              <label className="text-xs text-agnes-text-secondary">水印文字</label>
+              <input
+                type="text"
+                value={wmText}
+                onChange={(e) => setWmText(e.target.value)}
+                placeholder="输入水印文字..."
+                className="w-full bg-agnes-card border border-agnes-border rounded-input px-3 py-1.5 text-xs text-agnes-text-primary placeholder:text-agnes-text-muted focus:outline-none focus:border-agnes-purple/50"
+              />
+            </div>
+            <Slider label="字体大小" value={wmFontSize} onChange={setWmFontSize} min={8} max={72} />
+            <div className="space-y-1.5">
+              <label className="text-xs text-agnes-text-secondary">颜色</label>
+              <div className="flex gap-1.5 items-center">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setWmTextColor(c.value)}
+                    className={cn(
+                      'w-7 h-7 rounded-md border-2 transition-all',
+                      wmTextColor === c.value ? 'border-agnes-purple scale-110' : 'border-agnes-border'
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+                <input
+                  type="color"
+                  value={wmTextColor}
+                  onChange={(e) => setWmTextColor(e.target.value)}
+                  className="w-7 h-7 rounded-md cursor-pointer border border-agnes-border"
+                />
+              </div>
+            </div>
+            <Slider label="透明度" value={wmTextOpacity} onChange={setWmTextOpacity} min={10} max={90} unit="%" />
+          </>
+        )}
+
+        {(wmType === 'image' || wmType === 'logo') && (
+          <>
+            <div className="space-y-1.5">
+              <label className="text-xs text-agnes-text-secondary">上传水印图片</label>
+              <div
+                onClick={() => wmFileRef.current?.click()}
+                className="w-full border-2 border-dashed border-agnes-border rounded-lg p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-agnes-purple/40 transition-colors"
+              >
+                <Upload className="w-6 h-6 text-agnes-text-muted" />
+                <span className="text-[11px] text-agnes-text-muted">点击上传图片</span>
+              </div>
+              <input ref={wmFileRef} type="file" accept="image/*" className="hidden" />
+            </div>
+            <Slider label="缩放" value={wmImageScale} onChange={setWmImageScale} min={10} max={200} unit="%" />
+            <Slider label="透明度" value={wmImageOpacity} onChange={setWmImageOpacity} min={10} max={90} unit="%" />
+          </>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-agnes-text-secondary">位置</label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {WATERMARK_POSITIONS.map((pos) => (
+              <button
+                key={pos.id}
+                onClick={() => setWmPosition(pos.id)}
+                className={cn(
+                  'px-2 py-1.5 text-[10px] rounded-lg border transition-all',
+                  wmPosition === pos.id
+                    ? 'bg-agnes-purple/15 border-agnes-purple/50 text-agnes-purple'
+                    : 'bg-agnes-card border-agnes-border text-agnes-text-secondary hover:border-agnes-border-hover'
+                )}
+              >
+                {pos.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {wmType === 'text' && (
+          <Slider label="角度" value={wmAngle} onChange={setWmAngle} min={0} max={360} unit="°" />
+        )}
+
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs text-agnes-text-secondary">应用到全部结果</span>
+          <button onClick={() => setWmBatchApply(!wmBatchApply)} className={cn('w-10 h-5 rounded-full transition-all duration-200 relative', wmBatchApply ? 'bg-agnes-purple' : 'bg-agnes-border')}>
+            <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200', wmBatchApply ? 'left-[22px]' : 'left-0.5')} />
+          </button>
+        </div>
+      </>
+    )
+
     const renderStyleParams = () => (
       <>
         <div className="space-y-1.5">
@@ -371,6 +508,7 @@ export default function ImageEditor() {
         case 'cutout': return renderCutoutParams()
         case 'upscale': return renderUpscaleParams()
         case 'inpaint': case 'watermark': return renderInpaintParams()
+        case 'add-watermark': return renderWatermarkParams()
         case 'style': return renderStyleParams()
         case 'idphoto': return renderIdPhotoParams()
         case 'bg-replace': return renderBgReplaceParams()
@@ -388,9 +526,15 @@ export default function ImageEditor() {
           {getParamContent()}
         </div>
         <div className="p-4 border-t border-agnes-border space-y-2">
-          <Button variant="primary" size="md" loading={processing} onClick={handleProcess} className="w-full gap-2">
-            <Sparkles className="w-4 h-4" />开始处理
-          </Button>
+          {selectedTool === 'add-watermark' ? (
+            <Button variant="primary" size="md" loading={processing} onClick={handleProcess} className="w-full gap-2">
+              <Droplet className="w-4 h-4" />应用水印
+            </Button>
+          ) : (
+            <Button variant="primary" size="md" loading={processing} onClick={handleProcess} className="w-full gap-2">
+              <Sparkles className="w-4 h-4" />开始处理
+            </Button>
+          )}
           <Button variant="secondary" size="sm" className="w-full gap-1.5" onClick={() => showToast('info', '导出功能开发中')}>
             <Download className="w-3.5 h-3.5" />导出结果
           </Button>
