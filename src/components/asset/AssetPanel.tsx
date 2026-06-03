@@ -768,7 +768,7 @@ export default function AssetPanel() {
               <Progress value={storageRatio} max={1} size="sm" />
             </div>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => showToast('info', '数据迁移功能开发中')}>
+              <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => showToast('info', '数据迁移功能即将上线，敬请期待')}>
                 迁移数据
               </Button>
               <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => setShowClearConfirm(true)}>

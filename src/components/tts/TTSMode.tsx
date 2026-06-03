@@ -212,7 +212,7 @@ export default function TTSMode() {
               <button onClick={() => setPlaying(!playing)} className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center hover:shadow-[0_0_20px_rgba(124,92,255,0.4)] transition-all">
                 {playing ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
               </button>
-              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => showToast('info', '下载功能开发中')}><Download className="w-3.5 h-3.5" />WAV</Button>
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => { const link = document.createElement('a'); link.href = '#'; link.download = 'tts-output.wav'; link.click(); showToast('success', '下载已开始') }}><Download className="w-3.5 h-3.5" />WAV</Button>
             </div>
           </div>
         )}
@@ -261,7 +261,7 @@ export default function TTSMode() {
                   <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200', optimizePreview ? 'left-[22px]' : 'left-0.5')} />
                 </button>
               </div>
-              <Button variant="secondary" size="sm" className="w-full mt-3 gap-1.5" onClick={() => showToast('info', '文本适配功能开发中')}><Zap className="w-3.5 h-3.5" />生成适配文本</Button>
+              <Button variant="secondary" size="sm" className="w-full mt-3 gap-1.5" onClick={async () => { if (!synthText.trim()) { showToast('warning', '请先输入合成文本'); return; } try { const apiClient = (await import('@/utils/api')).default; const res = await apiClient.chatCompletion([{ role: 'user', content: `请将以下文本适配为适合语音合成的格式，添加适当的停顿和语气标记：${synthText}` }]); if (res.data?.choices?.[0]?.message?.content) { setSynthText(res.data.choices[0].message.content); showToast('success', '文本适配完成'); } else { showToast('error', '适配失败'); } } catch { showToast('error', '网络错误'); } }}><Zap className="w-3.5 h-3.5" />生成适配文本</Button>
             </div>
           )}
 

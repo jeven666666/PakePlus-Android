@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Crown, Check, Zap, Building2, Star } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import api from '@/utils/api'
 import { cn } from '@/utils/helpers'
 import { showToast } from '@/components/ui/Toast'
 
@@ -62,9 +63,15 @@ export default function Membership() {
   const user = useAuthStore((s) => s.user)
   const currentTier = user?.membership ?? 'free'
 
-  const handleSelect = (key: string) => {
+  const handleSelect = async (key: string) => {
     if (key === currentTier) return
-    showToast('info', `${key === 'free' ? '免费' : key === 'pro' ? 'Pro' : 'Enterprise'} 方案选择功能开发中`)
+    const res = await api.upgradeMembership(key as 'pro' | 'enterprise')
+    if (res.data) {
+      showToast('success', `${key === 'pro' ? 'Pro' : 'Enterprise'} 方案升级成功`)
+      useAuthStore.getState().fetchMe()
+    } else {
+      showToast('error', res.error || '升级失败')
+    }
   }
 
   return (

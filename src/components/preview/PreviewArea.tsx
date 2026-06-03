@@ -12,7 +12,7 @@ import Chip from '@/components/ui/Chip'
 import Progress from '@/components/ui/Progress'
 import { getStatusLabel, getStatusColor, formatDuration } from '@/utils/helpers'
 import { showToast } from '@/components/ui/Toast'
-import { mockAssets } from '@/utils/mockData'
+
 
 const modeLabels: Record<string, string> = {
   'text-to-image': '文生图', 'image-to-image': '图生图', 'text-to-video': '文生视频', batch: '批量',
@@ -46,7 +46,7 @@ const videoEditMenu = [
   { group: '其他', items: [{ icon: Clapperboard, label: '片头片尾制作' }, { icon: Camera, label: '定格画面' }, { icon: Mic, label: '声音提取' }, { icon: Users, label: '人声分离' }] },
 ]
 
-const mockThumbnails = mockAssets.slice(0, 4)
+
 
 const emptyConfigs: Record<string, { icon: typeof Sparkles; title: string; desc: string }> = {
   'text-to-image': { icon: Sparkles, title: '开始你的创作', desc: '输入提示词，调整参数，点击生成' },
@@ -221,16 +221,17 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
   )
 }
 
-function VersionThumbnails({ activeIndex, onSelect, selectMode, selectedItems, onToggleSelect }: {
-  activeIndex: number; onSelect: (i: number) => void; selectMode: boolean; selectedItems: Set<number>; onToggleSelect: (i: number) => void
+function VersionThumbnails({ activeIndex, onSelect, selectMode, selectedItems, onToggleSelect, resultUrls }: {
+  activeIndex: number; onSelect: (i: number) => void; selectMode: boolean; selectedItems: Set<number>; onToggleSelect: (i: number) => void; resultUrls: string[]
 }) {
+  if (resultUrls.length === 0) return null
   return (
     <div className="shrink-0 min-h-0 max-h-[120px] flex items-center gap-2 px-4 py-2 overflow-x-auto border-t border-agnes-border">
-      {mockThumbnails.map((thumb, i) => (
-        <button key={thumb.id} onClick={() => selectMode ? onToggleSelect(i) : onSelect(i)}
+      {resultUrls.map((url, i) => (
+        <button key={i} onClick={() => selectMode ? onToggleSelect(i) : onSelect(i)}
           className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 relative ${i === activeIndex ? 'border-agnes-purple glow-purple' : selectedItems.has(i) ? 'border-agnes-purple bg-agnes-purple/10' : 'border-transparent hover:border-agnes-border-hover'}`}
           aria-label={`版本 ${i + 1}`}>
-          <img src={thumb.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+          <img src={url} alt="" className="w-full h-full object-cover" />
           {selectMode && (
             <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded border ${selectedItems.has(i) ? 'bg-agnes-purple border-agnes-purple' : 'border-white/70 bg-black/20'} flex items-center justify-center`}>
               {selectedItems.has(i) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
@@ -457,7 +458,7 @@ export default function PreviewArea() {
   }
 
   const hasResult = currentTask.resultUrls.length > 0
-  const previewUrl = hasResult ? currentTask.resultUrls[activeThumb] ?? currentTask.resultUrls[0] : mockAssets[activeThumb % mockAssets.length]?.url ?? ''
+  const previewUrl = hasResult ? currentTask.resultUrls[activeThumb] ?? currentTask.resultUrls[0] : ''
   const isVideo = currentTask.type === 'video'
 
   return (
@@ -477,7 +478,7 @@ export default function PreviewArea() {
         )}
       </div>
       <ActionToolbar actions={toolbar} favorited={favorited} onToggleFavorite={handleToggleFavorite} onAction={handleAction} selectMode={selectMode} onSelectModeToggle={toggleSelectMode} />
-      <VersionThumbnails activeIndex={activeThumb} onSelect={setActiveThumb} selectMode={selectMode} selectedItems={selectedItems} onToggleSelect={toggleSelectItem} />
+      <VersionThumbnails activeIndex={activeThumb} onSelect={setActiveThumb} selectMode={selectMode} selectedItems={selectedItems} onToggleSelect={toggleSelectItem} resultUrls={currentTask.resultUrls} />
       <TaskLog task={currentTask} />
     </div>
   )

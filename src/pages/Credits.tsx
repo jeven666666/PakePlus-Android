@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Coins, ShoppingCart, Ticket, Flame, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -32,6 +32,13 @@ export default function Credits() {
   const [redeemInput, setRedeemInput] = useState('')
   const [redeeming, setRedeeming] = useState(false)
   const [selectedPkg, setSelectedPkg] = useState<number | null>(null)
+  const [history, setHistory] = useState(MOCK_HISTORY)
+
+  useEffect(() => {
+    api.getCreditsHistory().then((res) => {
+      if (res.data) setHistory(res.data)
+    }).catch(() => {})
+  }, [])
 
   const handleRedeem = async () => {
     const code = redeemInput.trim()
@@ -50,9 +57,15 @@ export default function Credits() {
     }
   }
 
-  const handlePurchase = (credits: number) => {
+  const handlePurchase = async (credits: number) => {
     setSelectedPkg(credits)
-    showToast('info', `${credits} 积分购买功能开发中`)
+    const res = await api.purchaseCredits(String(credits))
+    if (res.data) {
+      showToast('success', `${credits} 积分购买成功`)
+      useAuthStore.getState().fetchMe()
+    } else {
+      showToast('error', res.error || '购买失败')
+    }
   }
 
   return (
@@ -142,7 +155,7 @@ export default function Credits() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_HISTORY.map((row, i) => (
+                {history.map((row, i) => (
                   <tr key={i} className={cn('border-b border-agnes-border/50', i % 2 === 0 ? 'bg-white/[0.02]' : '')}>
                     <td className="px-5 py-3 text-agnes-text-muted">{row.date}</td>
                     <td className="px-5 py-3 text-agnes-text-secondary">{row.type}</td>
