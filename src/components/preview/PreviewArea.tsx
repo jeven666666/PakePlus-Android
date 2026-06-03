@@ -18,7 +18,7 @@ const modeLabels: Record<string, string> = {
 
 const imageToolbar = [
   { icon: ZoomIn, label: '放大' }, { icon: ZoomOut, label: '缩小' }, { icon: Columns2, label: '对比' },
-  { icon: RefreshCw, label: '重生成' }, { icon: Pencil, label: '编辑' }, { icon: Copy, label: '变体' },
+  { icon: RefreshCw, label: '重生成' }, { icon: Pencil, label: '编辑' }, { icon: Video, label: '转视频' }, { icon: Copy, label: '变体' },
   { icon: Heart, label: '收藏' }, { icon: Download, label: '下载' }, { icon: MoreHorizontal, label: '更多' },
 ]
 
@@ -80,7 +80,6 @@ function TaskStatusBar({ task }: { task: ReturnType<typeof useTaskStore.getState
   const chipVariant = task.status === 'success' ? 'success' : task.status === 'failed' ? 'error' : task.status === 'running' ? 'purple' : task.status === 'queued' ? 'warning' : 'default'
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-agnes-border bg-agnes-bg-secondary/60">
-      <span className="text-xs font-mono text-agnes-text-muted">{task.id}</span>
       <Chip variant={chipVariant}>{getStatusLabel(task.status)}</Chip>
       <span className="text-xs text-agnes-text-muted">{formatDuration(elapsed)}</span>
       {(task.status === 'running' || task.status === 'queued') && (
@@ -220,7 +219,7 @@ export default function PreviewArea() {
 
   useEffect(() => { setZoom(1); setActiveThumb(0); setFavorited(false) }, [currentTaskId])
 
-  if (currentMode === 'chat' || currentMode === 'tts') return null
+  if (currentMode === 'chat' || currentMode === 'tts' || currentMode === 'image-editor') return null
 
   const toolbar = currentMode === 'batch' ? batchToolbar : currentMode === 'text-to-video' ? videoToolbar : imageToolbar
 

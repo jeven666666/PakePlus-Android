@@ -6,6 +6,7 @@ import Chip from '@/components/ui/Chip'
 import Progress from '@/components/ui/Progress'
 import Button from '@/components/ui/Button'
 import { showToast } from '@/components/ui/Toast'
+import useAppStore from '@/store/useAppStore'
 
 type TabKey = 'recent' | 'favorites' | 'materials' | 'templates'
 
@@ -67,6 +68,15 @@ function AssetCard({ asset }: { asset: typeof mockAssets[number] }) {
             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5 text-white" />
+          </button>
+          <button
+            onClick={() => {
+              useAppStore.getState().setCurrentMode('text-to-video')
+              showToast('success', '已切换到视频模式')
+            }}
+            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <Video className="w-3.5 h-3.5 text-white" />
           </button>
         </div>
       )}
@@ -171,14 +181,25 @@ export default function AssetPanel() {
                     {templateTypeMap[tpl.type]}
                   </Chip>
                 </div>
-                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
                   <Button
                     variant="primary"
                     size="sm"
-                    className="w-full"
+                    className="flex-1"
                     onClick={() => showToast('success', `已应用模板「${tpl.name}」`)}
                   >
                     应用
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      useAppStore.getState().setCurrentMode('text-to-video')
+                      showToast('success', '已切换到视频模式')
+                    }}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    转视频
                   </Button>
                 </div>
               </div>

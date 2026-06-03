@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Image,
@@ -6,6 +7,7 @@ import {
   MessageSquare,
   Mic,
   Layers,
+  Pencil,
   ChevronDown,
   Bell,
   Settings,
@@ -15,6 +17,13 @@ import {
   PanelRightClose,
   PanelLeftOpen,
   PanelRightOpen,
+  Crown,
+  Coins,
+  Gift,
+  Link as LinkIcon,
+  Ticket,
+  UserCog,
+  ChevronUp,
 } from 'lucide-react'
 import useAppStore from '@/store/useAppStore'
 import useModelStore from '@/store/useModelStore'
@@ -26,6 +35,7 @@ const MODE_TABS = [
   { mode: 'chat' as const, label: '对话', icon: MessageSquare },
   { mode: 'tts' as const, label: '语音合成', icon: Mic },
   { mode: 'batch' as const, label: '批量', icon: Layers },
+  { mode: 'image-editor' as const, label: '图片编辑', icon: Pencil },
 ]
 
 export default function TopBar() {
@@ -38,7 +48,31 @@ export default function TopBar() {
   const models = useModelStore((s) => s.models)
   const currentModelId = useModelStore((s) => s.currentModelId)
   const setCurrentModel = useModelStore((s) => s.setCurrentModel)
-  const isChat = currentMode === 'chat'
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'testing'>('connected')
+
+  const isFullPage = currentMode === 'chat' || currentMode === 'tts' || currentMode === 'image-editor'
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [userMenuOpen])
+
+  const testApiConnection = async () => {
+    setApiStatus('testing')
+    await new Promise((r) => setTimeout(r, 1500))
+    setApiStatus('connected')
+  }
 
   return (
     <header className="glass fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 gap-3">
@@ -96,7 +130,7 @@ export default function TopBar() {
 
       <div className="flex-1" />
 
-      {!isChat && (
+      {!isFullPage && (
         <div className="flex items-center gap-1">
           <button
             onClick={toggleLeft}
@@ -118,10 +152,28 @@ export default function TopBar() {
       <div className="w-px h-6 bg-agnes-border mx-1" />
 
       <div className="flex items-center gap-3 shrink-0">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-agnes-success animate-pulse" />
-          <span className="text-xs text-agnes-text-muted">在线</span>
-        </div>
+        <button
+          onClick={testApiConnection}
+          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+          aria-label="测试API连接"
+        >
+          {apiStatus === 'testing' ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-agnes-warning animate-spin border-2 border-agnes-warning border-t-transparent" />
+              <span className="text-xs text-agnes-text-muted">测试中</span>
+            </>
+          ) : apiStatus === 'connected' ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-agnes-success animate-pulse" />
+              <span className="text-xs text-agnes-text-muted">已连接</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-agnes-error" />
+              <span className="text-xs text-agnes-text-muted">断开</span>
+            </>
+          )}
+        </button>
 
         <div className="flex items-center gap-1.5 text-xs text-agnes-text-secondary">
           <Zap size={12} className="text-agnes-cyan" />
@@ -144,12 +196,56 @@ export default function TopBar() {
           <Settings size={16} />
         </Link>
 
-        <button
-          aria-label="用户"
-          className="w-8 h-8 rounded-full bg-agnes-purple/20 border border-agnes-purple/30 flex items-center justify-center text-agnes-purple hover:bg-agnes-purple/30 transition-colors"
-        >
-          <User size={14} />
-        </button>
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            aria-label="用户"
+            className="w-8 h-8 rounded-full bg-agnes-purple/20 border border-agnes-purple/30 flex items-center justify-center text-agnes-purple hover:bg-agnes-purple/30 transition-colors"
+          >
+            <User size={14} />
+          </button>
+
+          {userMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 rounded-xl glass border border-agnes-border shadow-lg py-1 z-50">
+              <div className="px-4 py-3">
+                <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
+                <div className="text-xs text-agnes-text-muted mt-0.5">user@agnes.ai</div>
+              </div>
+              <div className="h-px bg-agnes-border mx-2" />
+              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+                <Crown size={16} className="text-agnes-warning" />
+                <span>会员中心</span>
+                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-agnes-warning/20 text-agnes-warning font-medium">Pro 会员</span>
+              </button>
+              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+                <Coins size={16} className="text-agnes-cyan" />
+                <span>我的积分</span>
+                <span className="ml-auto text-xs text-agnes-text-muted">2,580 积分</span>
+              </button>
+              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+                <Gift size={16} />
+                <span>兑换码</span>
+              </button>
+              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+                <LinkIcon size={16} />
+                <span>邀请链接</span>
+              </button>
+              <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors">
+                <Ticket size={16} />
+                <span>邀请码</span>
+              </button>
+              <div className="h-px bg-agnes-border mx-2" />
+              <Link
+                to="/settings"
+                onClick={() => setUserMenuOpen(false)}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors"
+              >
+                <UserCog size={16} />
+                <span>个人设置</span>
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )
