@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Image,
   ImagePlus,
@@ -24,8 +24,10 @@ import {
   Ticket,
   UserCog,
   ChevronUp,
+  LogOut,
 } from 'lucide-react'
 import useAppStore from '@/store/useAppStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import useModelStore from '@/store/useModelStore'
 
 const MODE_TABS = [
@@ -48,6 +50,8 @@ export default function TopBar() {
   const models = useModelStore((s) => s.models)
   const currentModelId = useModelStore((s) => s.currentModelId)
   const setCurrentModel = useModelStore((s) => s.setCurrentModel)
+  const { user, logout } = useAuthStore()
+  const navigate = useNavigate()
 
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
@@ -187,7 +191,7 @@ export default function TopBar() {
         </button>
 
         <div className="hidden lg:flex items-center gap-1.5 text-xs text-agnes-text-secondary">
-          <span className="font-mono">128 / 5000 积分</span>
+          <span className="font-mono">{user?.credits ?? 0} / {user?.membership === 'pro' ? '2000' : '100'} 积分</span>
         </div>
 
         <button
@@ -224,19 +228,19 @@ export default function TopBar() {
           {userMenuOpen && createPortal(
             <div className="fixed z-[100] w-60 rounded-xl bg-[#101523] border border-agnes-border shadow-2xl shadow-black/60 py-2" style={{ top: menuPos.top, right: menuPos.right }}>
               <div className="px-4 py-3">
-                <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
-                <div className="text-xs text-agnes-text-muted mt-0.5">user@agnes.ai</div>
+                <div className="text-sm font-medium text-agnes-text-primary">{user?.displayName || 'Agnes 用户'}</div>
+                <div className="text-xs text-agnes-text-muted mt-0.5">{user?.email || ''}</div>
               </div>
               <div className="h-px bg-agnes-border mx-2" />
               <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Crown size={16} className="text-agnes-warning" />
                 <span>会员中心</span>
-                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-agnes-warning/20 text-agnes-warning font-medium">Pro 会员</span>
+                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-agnes-warning/20 text-agnes-warning font-medium">{user?.membership === 'pro' ? 'Pro' : user?.membership === 'enterprise' ? '企业' : '免费'}</span>
               </button>
               <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Coins size={16} className="text-agnes-cyan" />
                 <span>我的积分</span>
-                <span className="ml-auto text-xs text-agnes-text-muted">2,580 积分</span>
+                <span className="ml-auto text-xs text-agnes-text-muted">{user?.credits ?? 0} 积分</span>
               </button>
               <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Gift size={16} />
@@ -248,7 +252,7 @@ export default function TopBar() {
               </button>
               <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Ticket size={16} />
-                <span>邀请码</span>
+                <span>邀请码: {user?.inviteCode || ''}</span>
               </button>
               <div className="h-px bg-agnes-border mx-2" />
               <Link
@@ -259,6 +263,13 @@ export default function TopBar() {
                 <UserCog size={16} />
                 <span>个人设置</span>
               </Link>
+              <button
+                onClick={() => { setUserMenuOpen(false); logout(); navigate('/auth'); }}
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-error hover:bg-white/5 transition-colors"
+              >
+                <LogOut size={16} />
+                <span>退出登录</span>
+              </button>
             </div>,
             document.body
           )}

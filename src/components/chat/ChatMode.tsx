@@ -86,7 +86,7 @@ export default function ChatMode() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, isTyping])
 
-  const sendMessage = (text?: string) => {
+  const sendMessage = async (text?: string) => {
     const content = (text ?? input).trim()
     if (!content) return
 
@@ -100,19 +100,32 @@ export default function ChatMode() {
     setInput('')
     setIsTyping(true)
 
-    setTimeout(() => {
-      const template = aiTemplates[Math.floor(Math.random() * aiTemplates.length)]
+    try {
+      const apiClient = (await import('@/utils/api')).default
+      const res = await apiClient.chatCompletion([
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: input },
+      ])
+
+      const aiContent = res.data?.choices?.[0]?.message?.content || '抱歉，我暂时无法回复，请稍后再试。'
       const aiMsg: ChatMessage = {
         id: `msg_${Date.now()}_ai`,
         role: 'assistant',
-        content: template.content,
-        suggestions: template.suggestions,
-        taskAction: template.taskAction,
+        content: aiContent,
+        suggestions: ['生成图片', '生成视频', '优化提示词', '调整参数'],
         timestamp: Date.now(),
       }
       setMessages((prev) => [...prev, aiMsg])
-      setIsTyping(false)
-    }, 800 + Math.random() * 1200)
+    } catch {
+      const aiMsg: ChatMessage = {
+        id: `msg_${Date.now()}_ai`,
+        role: 'assistant',
+        content: '网络错误，请检查后端服务是否正常运行。',
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, aiMsg])
+    }
+    setIsTyping(false)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,9 +135,21 @@ export default function ChatMode() {
     }
   }
 
-  const handleConvertTask = (type: 'image' | 'video', prompt: string) => {
-    createTask({ type, prompt, negativePrompt: '', params: {} })
-    showToast('success', type === 'image' ? '已创建生图任务' : '已创建视频任务')
+  const handleConvertTask = async (type: 'image' | 'video', prompt: string) => {
+    try {
+      const apiClient = (await import('@/utils/api')).default
+      const apiFn = type === 'video' ? apiClient.generateVideo.bind(apiClient) : apiClient.generateImage.bind(apiClient)
+      const res = await apiFn({ prompt })
+      if (res.error) {
+        showToast('error', res.error)
+      } else {
+        createTask({ type, prompt, negativePrompt: '', params: {} })
+        showToast('success', type === 'image' ? '已创建生图任务' : '已创建视频任务')
+      }
+    } catch {
+      createTask({ type, prompt, negativePrompt: '', params: {} })
+      showToast('success', type === 'image' ? '已创建生图任务' : '已创建视频任务')
+    }
   }
 
   const handleDirectGenerate = (type: 'image' | 'video', prompt: string) => {

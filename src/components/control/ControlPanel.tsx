@@ -78,25 +78,60 @@ export default function ControlPanel() {
   const removeRef = (i: number) => setRefImages((p) => p.filter((_, j) => j !== i))
   const handleFrameFile = (e: React.ChangeEvent<HTMLInputElement>, s: React.Dispatch<React.SetStateAction<string[]>>) => { if (e.target.files) { readFiles(e.target.files, s); e.target.value = '' } }
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const isBatch = mode === 'batch'
     if (!isBatch && !prompt.trim()) { showToast('warning', '请输入提示词'); return }
     if (isBatch && !batchPrompts.trim()) { showToast('warning', '请输入提示词'); return }
     setGenerating(true)
-    const taskId = createTask({
-      type: mode === 'text-to-video' ? 'video' : 'image',
-      prompt: isBatch ? batchPrompts : prompt, negativePrompt,
-      params: { mode, aspectRatio, resolution, count: +count, style: selectedStyle, creativity, detail, seed, cfgScale, steps, sampler, hdFix, imageWeight, influenceMode, videoInputMode, duration: +duration, fps: +fps, motionIntensity, cameraMotion, rhythm, styleConsistency, refImages: refImages.length, firstFrame: firstFrame.length, lastFrame: lastFrame.length },
-    })
-    setTimeout(() => {
-      useTaskStore.getState().updateTaskStatus(taskId, 'running', 0)
-      let prog = 0
-      const iv = setInterval(() => {
-        prog += Math.floor(Math.random() * 15) + 5
-        if (prog >= 100) { prog = 100; clearInterval(iv); useTaskStore.getState().completeTask(taskId, Array.from({ length: Math.min(+count, 4) }, (_, i) => `https://picsum.photos/seed/${taskId}-${i}/1024/1024`)); setGenerating(false); showToast('success', '生成完成！') }
-        else useTaskStore.getState().updateTaskProgress(taskId, prog)
-      }, 600)
-    }, 800)
+
+    try {
+      const apiClient = (await import('@/utils/api')).default
+      const taskType = mode === 'text-to-video' ? 'video' : 'image'
+      const apiFn = taskType === 'video' ? apiClient.generateVideo.bind(apiClient) : apiClient.generateImage.bind(apiClient)
+
+      const res = await apiFn({
+        prompt: isBatch ? batchPrompts : prompt,
+        negativePrompt,
+        params: { mode, aspectRatio, resolution, count: +count, style: selectedStyle, creativity, detail, seed, cfgScale, steps, sampler, hdFix, imageWeight, influenceMode, videoInputMode, duration: +duration, fps: +fps, motionIntensity, cameraMotion, rhythm, styleConsistency },
+      })
+
+      if (res.error) {
+        showToast('error', res.error)
+        setGenerating(false)
+        return
+      }
+
+      // Create local task for tracking
+      const taskId = createTask({
+        type: taskType,
+        prompt: isBatch ? batchPrompts : prompt,
+        negativePrompt,
+        params: { mode, aspectRatio, resolution, count: +count, style: selectedStyle, creativity, detail, seed, cfgScale, steps, sampler, hdFix, imageWeight, influenceMode, videoInputMode, duration: +duration, fps: +fps, motionIntensity, cameraMotion, rhythm, styleConsistency },
+      })
+
+      // Poll for task status from backend
+      const pollInterval = setInterval(async () => {
+        const taskRes = await apiClient.getTask(res.data.id)
+        if (taskRes.data) {
+          const t = taskRes.data
+          useTaskStore.getState().updateTaskProgress(taskId, t.progress || 0)
+          if (t.status === 'success') {
+            clearInterval(pollInterval)
+            useTaskStore.getState().completeTask(taskId, t.resultUrls || [])
+            setGenerating(false)
+            showToast('success', '生成完成！')
+          } else if (t.status === 'failed') {
+            clearInterval(pollInterval)
+            useTaskStore.getState().failTask(taskId, t.errorMessage || '生成失败')
+            setGenerating(false)
+            showToast('error', '生成失败')
+          }
+        }
+      }, 2000)
+    } catch (err: any) {
+      showToast('error', err.message || '生成失败')
+      setGenerating(false)
+    }
   }
 
   const D = () => <div className="border-t border-agnes-border" />

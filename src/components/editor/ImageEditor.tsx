@@ -133,22 +133,52 @@ export default function ImageEditor() {
     reader.readAsDataURL(file)
   }
 
-  const handleProcess = () => {
+  const handleProcess = async () => {
     if (!imageSrc) { showToast('warning', '请先上传图片'); return }
     setProcessing(true)
     setProgress(0)
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) { clearInterval(interval); return 100 }
-        return p + 5
+
+    try {
+      const apiClient = (await import('@/utils/api')).default
+      const res = await apiClient.processEditor({
+        imageId: 'current',
+        tool: selectedTool,
+        prompt: inpaintPrompt,
+        params: { strength: genericStrength, brushSize, watermarkText: wmText, watermarkPosition: wmPosition },
       })
-    }, 100)
-    setTimeout(() => {
-      clearInterval(interval)
+
+      if (res.error) {
+        showToast('error', res.error)
+        setProcessing(false)
+        return
+      }
+
+      // Simulate progress while polling
+      const progressInterval = setInterval(() => {
+        setProgress((p) => Math.min(p + 5, 90))
+      }, 200)
+
+      const poll = setInterval(async () => {
+        const taskRes = await apiClient.getTask(res.data.id)
+        if (taskRes.data?.status === 'success') {
+          clearInterval(poll)
+          clearInterval(progressInterval)
+          setProgress(100)
+          setTimeout(() => { setProcessing(false); setProgress(0) }, 500)
+          showToast('success', '处理完成')
+        } else if (taskRes.data?.status === 'failed') {
+          clearInterval(poll)
+          clearInterval(progressInterval)
+          setProcessing(false)
+          setProgress(0)
+          showToast('error', '处理失败')
+        }
+      }, 2000)
+    } catch {
       setProcessing(false)
       setProgress(0)
-      showToast('success', '处理完成')
-    }, 2000)
+      showToast('error', '网络错误')
+    }
   }
 
   const renderToolPanel = () => (

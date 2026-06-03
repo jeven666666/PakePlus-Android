@@ -75,12 +75,46 @@ export default function TTSMode() {
     return () => cancelAnimationFrame(animRef.current)
   }, [playing, generated])
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!synthText.trim()) { showToast('warning', '请输入合成文本'); return }
     if (model === 'mimo-v2.5-tts-voicedesign' && !styleText.trim()) { showToast('warning', '音色设计模式需要输入风格描述'); return }
     setGenerating(true)
     setGenerated(false)
-    setTimeout(() => { setGenerating(false); setGenerated(true); setWaveHeights(Array.from({ length: 50 }, () => 8 + Math.random() * 20)); showToast('success', '语音合成完成') }, 2000)
+
+    try {
+      const apiClient = (await import('@/utils/api')).default
+      const res = await apiClient.synthesizeTts({
+        text: synthText,
+        voice: selectedVoice,
+        model,
+        params: { styleText, directorMode: directorOpen, singingMode: singMode, outputFormat },
+      })
+
+      if (res.error) {
+        showToast('error', res.error)
+        setGenerating(false)
+        return
+      }
+
+      // Poll for completion
+      const poll = setInterval(async () => {
+        const taskRes = await apiClient.getTask(res.data.id)
+        if (taskRes.data?.status === 'success') {
+          clearInterval(poll)
+          setGenerating(false)
+          setGenerated(true)
+          setWaveHeights(Array.from({ length: 50 }, () => 8 + Math.random() * 20))
+          showToast('success', '语音合成完成')
+        } else if (taskRes.data?.status === 'failed') {
+          clearInterval(poll)
+          setGenerating(false)
+          showToast('error', '语音合成失败')
+        }
+      }, 2000)
+    } catch {
+      setGenerating(false)
+      showToast('error', '网络错误')
+    }
   }
 
   const handleFileUpload = () => fileRef.current?.click()

@@ -1,14 +1,35 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Studio from '@/pages/Studio'
 import Settings from '@/pages/Settings'
+import Auth from '@/pages/Auth'
 import ToastContainer from '@/components/ui/Toast'
+import { useAuthStore } from '@/store/useAuthStore'
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, fetchMe } = useAuthStore()
+
+  useEffect(() => {
+    if (isAuthenticated && !useAuthStore.getState().user) {
+      fetchMe()
+    }
+  }, [isAuthenticated, fetchMe])
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />
+  }
+
+  return <>{children}</>
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Studio />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ToastContainer />
     </BrowserRouter>
