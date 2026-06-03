@@ -3,11 +3,13 @@ import ControlPanel from '@/components/control/ControlPanel'
 import PreviewArea from '@/components/preview/PreviewArea'
 import AssetPanel from '@/components/asset/AssetPanel'
 import ChatMode from '@/components/chat/ChatMode'
+import TTSMode from '@/components/tts/TTSMode'
 import useAppStore from '@/store/useAppStore'
 
 export default function Studio() {
   const { currentMode, leftPanelCollapsed, rightPanelCollapsed } = useAppStore()
   const isChat = currentMode === 'chat'
+  const isTTS = currentMode === 'tts'
 
   return (
     <div className="h-screen flex flex-col bg-agnes-bg">
@@ -15,6 +17,8 @@ export default function Studio() {
       <div className="flex-1 flex overflow-hidden pt-14">
         {isChat ? (
           <ChatMode />
+        ) : isTTS ? (
+          <TTSMode />
         ) : (
           <>
             <div

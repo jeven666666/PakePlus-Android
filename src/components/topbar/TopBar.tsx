@@ -4,6 +4,7 @@ import {
   ImagePlus,
   Video,
   MessageSquare,
+  Mic,
   Layers,
   ChevronDown,
   Bell,
@@ -23,6 +24,7 @@ const MODE_TABS = [
   { mode: 'image-to-image' as const, label: '图生图', icon: ImagePlus },
   { mode: 'text-to-video' as const, label: '视频', icon: Video },
   { mode: 'chat' as const, label: '对话', icon: MessageSquare },
+  { mode: 'tts' as const, label: '语音合成', icon: Mic },
   { mode: 'batch' as const, label: '批量', icon: Layers },
 ]
 
@@ -79,7 +81,9 @@ export default function TopBar() {
                 isActive
                   ? mode === 'chat'
                     ? 'bg-agnes-cyan/20 text-agnes-cyan border border-agnes-cyan/40'
-                    : 'bg-agnes-purple/20 text-agnes-text-primary border border-agnes-purple/40'
+                    : mode === 'tts'
+                      ? 'bg-agnes-warning/20 text-agnes-warning border border-agnes-warning/40'
+                      : 'bg-agnes-purple/20 text-agnes-text-primary border border-agnes-purple/40'
                   : 'text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 border border-transparent'
               }`}
             >

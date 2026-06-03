@@ -4,7 +4,7 @@ import useAppStore from '@/store/useAppStore'
 import {
   Sparkles, Play, Pause, ZoomIn, ZoomOut, Columns2, RefreshCw, Pencil, Copy, Heart,
   Download, MoreHorizontal, ChevronDown, ChevronUp, Volume2, VolumeX, ImagePlus, Video,
-  Layers, Camera, Grid3X3, CheckSquare, Trash2,
+  Layers, Camera, Grid3X3, CheckSquare, Trash2, Mic,
 } from 'lucide-react'
 import Chip from '@/components/ui/Chip'
 import Progress from '@/components/ui/Progress'
@@ -40,6 +40,7 @@ const emptyConfigs: Record<string, { icon: typeof Sparkles; title: string; desc:
   'image-to-image': { icon: ImagePlus, title: '上传参考图开始创作', desc: '上传一张图片，AI 将基于参考图生成新作品' },
   'text-to-video': { icon: Video, title: '创作你的视频', desc: '描述画面，控制镜头，生成视频' },
   batch: { icon: Layers, title: '批量生成', desc: '输入多个提示词，一键批量生成' },
+  tts: { icon: Mic, title: '语音合成', desc: '输入文本，选择音色，生成语音' },
 }
 
 function EmptyState({ mode }: { mode: string }) {
@@ -219,7 +220,7 @@ export default function PreviewArea() {
 
   useEffect(() => { setZoom(1); setActiveThumb(0); setFavorited(false) }, [currentTaskId])
 
-  if (currentMode === 'chat') return null
+  if (currentMode === 'chat' || currentMode === 'tts') return null
 
   const toolbar = currentMode === 'batch' ? batchToolbar : currentMode === 'text-to-video' ? videoToolbar : imageToolbar
 

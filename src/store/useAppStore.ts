@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type CreationMode = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'chat' | 'batch'
+type CreationMode = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'chat' | 'batch' | 'tts'
 
 interface AppState {
   currentMode: CreationMode
