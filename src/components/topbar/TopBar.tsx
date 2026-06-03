@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import {
   Image,
@@ -220,7 +221,7 @@ export default function TopBar() {
             <User size={14} />
           </button>
 
-          {userMenuOpen && (
+          {userMenuOpen && createPortal(
             <div className="fixed z-[100] w-60 rounded-xl bg-[#101523] border border-agnes-border shadow-2xl shadow-black/60 py-2" style={{ top: menuPos.top, right: menuPos.right }}>
               <div className="px-4 py-3">
                 <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
@@ -258,7 +259,8 @@ export default function TopBar() {
                 <UserCog size={16} />
                 <span>个人设置</span>
               </Link>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       </div>
