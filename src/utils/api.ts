@@ -247,12 +247,34 @@ class ApiClient {
     });
   }
 
+  async purchaseCredits(packageId: string) {
+    return this.request<any>('/credits/purchase', {
+      method: 'POST',
+      body: JSON.stringify({ packageId }),
+    });
+  }
+
+  async upgradeMembership(tier: 'pro' | 'enterprise') {
+    return this.request<any>('/credits/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ tier }),
+    });
+  }
+
+  async getCreditsHistory() {
+    return this.request<any>('/credits/history');
+  }
+
   async getStorage() {
     return this.request<any>('/credits/storage');
   }
 
   async getInvite() {
     return this.request<any>('/credits/invite');
+  }
+
+  async getInviteRecords() {
+    return this.request<any>('/credits/invite/records');
   }
 
   // Upload

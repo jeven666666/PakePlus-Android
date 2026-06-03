@@ -232,28 +232,28 @@ export default function TopBar() {
                 <div className="text-xs text-agnes-text-muted mt-0.5">{user?.email || ''}</div>
               </div>
               <div className="h-px bg-agnes-border mx-2" />
-              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
+              <Link to="/membership" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Crown size={16} className="text-agnes-warning" />
                 <span>会员中心</span>
                 <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-agnes-warning/20 text-agnes-warning font-medium">{user?.membership === 'pro' ? 'Pro' : user?.membership === 'enterprise' ? '企业' : '免费'}</span>
-              </button>
-              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
+              </Link>
+              <Link to="/credits" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Coins size={16} className="text-agnes-cyan" />
                 <span>我的积分</span>
                 <span className="ml-auto text-xs text-agnes-text-muted">{user?.credits ?? 0} 积分</span>
-              </button>
-              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
+              </Link>
+              <Link to="/credits" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Gift size={16} />
                 <span>兑换码</span>
-              </button>
-              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
+              </Link>
+              <Link to="/invite" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <LinkIcon size={16} />
                 <span>邀请链接</span>
-              </button>
-              <button className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
+              </Link>
+              <Link to="/invite" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors">
                 <Ticket size={16} />
                 <span>邀请码: {user?.inviteCode || ''}</span>
-              </button>
+              </Link>
               <div className="h-px bg-agnes-border mx-2" />
               <Link
                 to="/settings"

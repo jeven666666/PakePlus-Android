@@ -281,7 +281,8 @@ function TaskLog({ task }: { task: ReturnType<typeof useTaskStore.getState>['tas
 
 export default function PreviewArea() {
   const currentMode = useAppStore((s) => s.currentMode)
-  const { currentTaskId, tasks } = useTaskStore()
+  const setCurrentMode = useAppStore((s) => s.setCurrentMode)
+  const { currentTaskId, tasks, createTask, completeTask, failTask } = useTaskStore()
   const currentTask = tasks.find((t) => t.id === currentTaskId) ?? null
   const [zoom, setZoom] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
@@ -291,11 +292,108 @@ export default function PreviewArea() {
 
   const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.25, 3)), [])
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.25, 0.5)), [])
-  const handleToggleFavorite = useCallback(() => {
-    setFavorited((f) => !f)
-    showToast(favorited ? 'info' : 'success', favorited ? '已取消收藏' : '已收藏')
-  }, [favorited])
-  const handleAction = useCallback((label: string) => { showToast('info', `${label}功能开发中`) }, [])
+  const handleToggleFavorite = useCallback(async () => {
+    if (!currentTask) return
+    const api = (await import('@/utils/api')).default
+    const res = await api.toggleFavorite(currentTask.id)
+    if (res.error) {
+      showToast('error', '收藏操作失败')
+    } else {
+      setFavorited((f) => !f)
+      showToast(favorited ? 'info' : 'success', favorited ? '已取消收藏' : '已收藏')
+    }
+  }, [currentTask, favorited])
+  const handleAction = useCallback(async (label: string) => {
+    const api = (await import('@/utils/api')).default
+    const getPreviewUrl = () => {
+      if (!currentTask) return ''
+      const hasResult = currentTask.resultUrls.length > 0
+      return hasResult ? currentTask.resultUrls[activeThumb] ?? currentTask.resultUrls[0] : ''
+    }
+
+    switch (label) {
+      case '下载': {
+        const url = getPreviewUrl()
+        if (!url) { showToast('error', '无可下载资源'); break }
+        const link = document.createElement('a')
+        link.href = url
+        link.download = ''
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        showToast('success', '开始下载')
+        break
+      }
+      case '收藏': {
+        if (!currentTask) break
+        const res = await api.toggleFavorite(currentTask.id)
+        if (res.error) {
+          showToast('error', '收藏操作失败')
+        } else {
+          setFavorited((f) => !f)
+          showToast(favorited ? 'info' : 'success', favorited ? '已取消收藏' : '已收藏')
+        }
+        break
+      }
+      case '重生成': {
+        if (!currentTask) break
+        const res = await api.generateImage({ prompt: currentTask.prompt, negativePrompt: currentTask.negativePrompt, params: currentTask.params })
+        if (res.error) {
+          showToast('error', '重新生成失败')
+        } else {
+          showToast('success', '已提交重新生成任务')
+          const taskId = createTask({ type: 'image', prompt: currentTask.prompt, negativePrompt: currentTask.negativePrompt, params: currentTask.params })
+          const serverTaskId = res.data?.id || res.data?.taskId
+          if (serverTaskId) {
+            const poll = async () => {
+              const taskRes = await api.getTask(serverTaskId)
+              if (taskRes.data?.status === 'success') {
+                completeTask(taskId, taskRes.data.resultUrls || [])
+              } else if (taskRes.data?.status === 'failed') {
+                failTask(taskId, taskRes.data?.error || '生成失败')
+              } else {
+                setTimeout(poll, 2000)
+              }
+            }
+            setTimeout(poll, 2000)
+          }
+        }
+        break
+      }
+      case '编辑': {
+        setCurrentMode('image-editor')
+        break
+      }
+      case '转视频': {
+        if (!currentTask) break
+        const res = await api.generateVideo({ prompt: currentTask.prompt })
+        if (res.error) {
+          showToast('error', '转视频请求失败')
+        } else {
+          showToast('success', '已提交转视频任务')
+          const taskId = createTask({ type: 'video', prompt: currentTask.prompt, negativePrompt: currentTask.negativePrompt, params: currentTask.params })
+          const serverTaskId = res.data?.id || res.data?.taskId
+          if (serverTaskId) {
+            const poll = async () => {
+              const taskRes = await api.getTask(serverTaskId)
+              if (taskRes.data?.status === 'success') {
+                completeTask(taskId, taskRes.data.resultUrls || [])
+              } else if (taskRes.data?.status === 'failed') {
+                failTask(taskId, taskRes.data?.error || '生成失败')
+              } else {
+                setTimeout(poll, 2000)
+              }
+            }
+            setTimeout(poll, 2000)
+          }
+        }
+        break
+      }
+      default:
+        showToast('info', `${label}功能开发中`)
+    }
+  }, [currentTask, activeThumb, favorited, setCurrentMode, createTask, completeTask, failTask])
 
   const toggleSelectMode = useCallback(() => {
     setSelectMode((s) => !s)
@@ -309,8 +407,34 @@ export default function PreviewArea() {
     })
   }, [])
   const cancelSelect = useCallback(() => { setSelectMode(false); setSelectedItems(new Set()) }, [])
-  const handleBatchDownload = useCallback(() => { showToast('success', `批量下载 ${selectedItems.size} 项`) }, [selectedItems.size])
-  const handleBatchVideo = useCallback(() => { showToast('info', '批量转视频功能开发中') }, [])
+  const handleBatchDownload = useCallback(() => {
+    if (!currentTask) return
+    const urls = currentTask.resultUrls.length > 0
+      ? Array.from(selectedItems).map((i) => currentTask.resultUrls[i]).filter(Boolean)
+      : []
+    if (urls.length === 0) { showToast('error', '无可下载资源'); return }
+    urls.forEach((url) => {
+      const link = document.createElement('a')
+      link.href = url
+      link.download = ''
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    })
+    showToast('success', `批量下载 ${urls.length} 项`)
+  }, [currentTask, selectedItems])
+  const handleBatchVideo = useCallback(async () => {
+    if (!currentTask) return
+    const api = (await import('@/utils/api')).default
+    const indices = Array.from(selectedItems)
+    let successCount = 0
+    for (const _i of indices) {
+      const res = await api.generateVideo({ prompt: currentTask.prompt })
+      if (!res.error) successCount++
+    }
+    showToast(successCount > 0 ? 'success' : 'error', successCount > 0 ? `已提交 ${successCount} 个转视频任务` : '转视频请求失败')
+  }, [currentTask, selectedItems])
 
   useEffect(() => { setZoom(1); setActiveThumb(0); setFavorited(false); setSelectMode(false); setSelectedItems(new Set()) }, [currentTaskId])
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Star, Edit2, Trash2, TestTube, Shield, User, Palette, Globe, Check, X, Camera, Coins, Crown, Copy, Gift, Link as LinkIcon, Ticket, Save, Eye, EyeOff } from 'lucide-react'
 import useModelStore from '@/store/useModelStore'
@@ -11,6 +11,7 @@ import Modal from '@/components/ui/Modal'
 import Drawer from '@/components/ui/Drawer'
 import { showToast } from '@/components/ui/Toast'
 import { cn } from '@/utils/helpers'
+import api from '@/utils/api'
 
 const TABS = ['模型配置', 'API 管理', '账户信息', '偏好设置'] as const
 type TabKey = typeof TABS[number]
@@ -22,7 +23,7 @@ const inputCls = "w-full h-10 px-3 text-sm rounded-input bg-agnes-bg-secondary b
 const drawerInputCls = "w-full h-9 px-3 text-sm rounded-input bg-agnes-bg-secondary border border-agnes-border text-agnes-text-primary focus:outline-none focus:border-agnes-purple/50"
 
 export default function Settings() {
-  const { models, addModel, updateModel, deleteModel, setDefaultModel, testConnectivity } = useModelStore()
+  const { models, addModel, updateModel, deleteModel, setDefaultModel } = useModelStore()
   const [activeTab, setActiveTab] = useState<TabKey>('模型配置')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingModel, setEditingModel] = useState<ModelConfig | null>(null)
@@ -45,16 +46,88 @@ export default function Settings() {
 
   const openAdd = () => { setEditingModel(null); setFormData(emptyModel); setDrawerOpen(true) }
   const openEdit = (m: ModelConfig) => { setEditingModel(m); const rest = { ...m }; delete (rest as Partial<ModelConfig>).id; setFormData(rest as Omit<ModelConfig, 'id'>); setDrawerOpen(true) }
-  const handleSave = () => { if (editingModel) { updateModel(editingModel.id, formData); showToast('success', '模型已更新') } else { addModel(formData); showToast('success', '模型已添加') }; setDrawerOpen(false) }
-  const handleDelete = () => { if (deleteTarget) { deleteModel(deleteTarget.id); showToast('success', '模型已删除'); setDeleteTarget(null) } }
-  const handleTest = async (id: string) => { setTesting(true); try { const ok = await testConnectivity(id); showToast(ok ? 'success' : 'error', ok ? '连通性测试通过' : '连通性测试失败') } catch { showToast('error', '连通性测试异常') }; setTesting(false) }
+  const handleSave = async () => {
+    if (editingModel) {
+      const res = await api.updateModelConfig(editingModel.id, formData)
+      if (res.error) { showToast('error', '模型更新失败'); return }
+      updateModel(editingModel.id, formData)
+      showToast('success', '模型已更新')
+    } else {
+      const res = await api.createModelConfig(formData)
+      if (res.error) { showToast('error', '模型添加失败'); return }
+      addModel(formData)
+      showToast('success', '模型已添加')
+    }
+    setDrawerOpen(false)
+  }
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    const res = await api.deleteModelConfig(deleteTarget.id)
+    if (res.error) { showToast('error', '模型删除失败'); return }
+    deleteModel(deleteTarget.id)
+    showToast('success', '模型已删除')
+    setDeleteTarget(null)
+  }
+  const handleTest = async (id: string) => {
+    setTesting(true)
+    try {
+      const res = await api.testModelConnectivity(id)
+      const ok = !res.error && res.data?.success !== false
+      showToast(ok ? 'success' : 'error', ok ? '连通性测试通过' : '连通性测试失败')
+    } catch {
+      showToast('error', '连通性测试异常')
+    }
+    setTesting(false)
+  }
   const handleDrawerTest = async () => { if (editingModel) await handleTest(editingModel.id) }
   const toggleCapability = (key: string) => setFormData((p) => ({ ...p, capabilities: p.capabilities.includes(key) ? p.capabilities.filter((c) => c !== key) : [...p.capabilities, key] }))
   const setField = <K extends keyof Omit<ModelConfig, 'id'>>(key: K, value: ModelConfig[K]) => setFormData((p) => ({ ...p, [key]: value }))
-  const handleTtsTest = async () => { setTtsTesting(true); await new Promise((r) => setTimeout(r, 1500)); const ok = !!ttsApiKey; setTtsConnected(ok); setTtsTesting(false); showToast(ok ? 'success' : 'error', ok ? 'TTS 连接成功' : 'TTS 连接失败') }
-  const handleSaveName = () => { setDisplayName(nameInput); setEditingName(false); showToast('success', '昵称已保存') }
+  const handleTtsTest = async () => {
+    setTtsTesting(true)
+    try {
+      const headers: Record<string, string> = {}
+      if (ttsApiKey) headers['Authorization'] = `Bearer ${ttsApiKey}`
+      const res = await fetch(ttsBaseUrl, { method: 'GET', headers })
+      const ok = res.ok
+      setTtsConnected(ok)
+      showToast(ok ? 'success' : 'error', ok ? 'TTS 连接成功' : 'TTS 连接失败')
+    } catch {
+      setTtsConnected(false)
+      showToast('error', 'TTS 连接失败')
+    } finally {
+      setTtsTesting(false)
+    }
+  }
+  const handleSaveName = async () => {
+    const res = await api.updateProfile({ displayName: nameInput, signature })
+    if (res.error) {
+      showToast('error', '保存失败')
+    } else {
+      setDisplayName(nameInput)
+      setEditingName(false)
+      showToast('success', '昵称已保存')
+    }
+  }
   const handleCopy = (text: string, label: string) => { navigator.clipboard.writeText(text); showToast('success', `${label}已复制`) }
   const handleRedeem = () => { if (!redeemCode.trim()) { showToast('error', '请输入兑换码'); return }; showToast('success', '兑换成功'); setRedeemCode('') }
+
+  useEffect(() => {
+    const loadData = async () => {
+      const [meRes, modelsRes] = await Promise.all([api.getMe(), api.getModelConfigs()])
+      if (meRes.data) {
+        setDisplayName(meRes.data.displayName || 'Agnes 用户')
+        setNameInput(meRes.data.displayName || 'Agnes 用户')
+        setSignature(meRes.data.signature || '')
+      }
+      if (modelsRes.data) {
+        const serverModels = Array.isArray(modelsRes.data) ? modelsRes.data : modelsRes.data.models || []
+        if (serverModels.length > 0) {
+          useModelStore.setState({ models: serverModels })
+        }
+      }
+    }
+    loadData()
+  }, [])
 
   return (
     <div className="h-full bg-agnes-bg overflow-y-auto">
