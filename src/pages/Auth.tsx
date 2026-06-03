@@ -1,5 +1,129 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+
+// Particle component with rotation and fade effect
+function ParticleBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    const particles: Array<{
+      x: number; y: number; size: number; speedX: number; speedY: number;
+      opacity: number; fadeDir: number; angle: number; rotSpeed: number;
+      color: string;
+    }> = [];
+
+    const colors = ['#7C5CFF', '#00D4FF', '#9333EA', '#06B6D4', '#8B5CF6', '#22D3EE'];
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Create particles
+    const count = 80;
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 3 + 1,
+        speedX: (Math.random() - 0.5) * 0.5,
+        speedY: (Math.random() - 0.5) * 0.5,
+        opacity: Math.random() * 0.6 + 0.1,
+        fadeDir: Math.random() > 0.5 ? 1 : -1,
+        angle: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.01,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            const lineOpacity = (1 - dist / 150) * 0.15 * Math.min(particles[i].opacity, particles[j].opacity);
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(124, 92, 255, ${lineOpacity})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw particles
+      for (const p of particles) {
+        // Update position with orbital rotation around center
+        p.angle += p.rotSpeed;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const orbitX = p.x - cx;
+        const orbitY = p.y - cy;
+        const cos = Math.cos(p.rotSpeed);
+        const sin = Math.sin(p.rotSpeed);
+        p.x = cx + orbitX * cos - orbitY * sin + p.speedX;
+        p.y = cy + orbitX * sin + orbitY * cos + p.speedY;
+
+        // Fade in/out
+        p.opacity += p.fadeDir * 0.003;
+        if (p.opacity > 0.7) { p.opacity = 0.7; p.fadeDir = -1; }
+        if (p.opacity < 0.05) { p.opacity = 0.05; p.fadeDir = 1; }
+
+        // Wrap around
+        if (p.x < -10) p.x = canvas.width + 10;
+        if (p.x > canvas.width + 10) p.x = -10;
+        if (p.y < -10) p.y = canvas.height + 10;
+        if (p.y > canvas.height + 10) p.y = -10;
+
+        // Draw glow
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+        gradient.addColorStop(0, p.color + Math.round(p.opacity * 255).toString(16).padStart(2, '0'));
+        gradient.addColorStop(1, p.color + '00');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Draw core
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.round(p.opacity * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 0 }}
+    />
+  );
+}
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,8 +142,15 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-agnes-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-agnes-bg flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Particle background */}
+      <ParticleBackground />
+
+      {/* Gradient orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-agnes-purple/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-agnes-cyan/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3">
