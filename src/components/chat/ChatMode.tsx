@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Sparkles, Image, Video, Bot, User, MessageSquare, Zap, ArrowRight, Lightbulb, Wand2, Settings2, FileImage } from 'lucide-react'
+import { Send, Sparkles, Image, Video, Bot, User, MessageSquare, Zap, ArrowRight, Lightbulb, Wand2, Settings2, FileImage, ChevronDown, ChevronUp } from 'lucide-react'
 import useAppStore from '@/store/useAppStore'
 import useTaskStore from '@/store/useTaskStore'
 import Chip from '@/components/ui/Chip'
@@ -75,6 +75,9 @@ export default function ChatMode() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [showModelSel, setShowModelSel] = useState(false)
+  const [selectedImageModel, setSelectedImageModel] = useState('agnes-image-2.1')
+  const [selectedVideoModel, setSelectedVideoModel] = useState('agnes-video-v2.0')
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const createTask = useTaskStore((s) => s.createTask)
@@ -247,6 +250,69 @@ export default function ChatMode() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="px-4 py-2 border-t border-agnes-border">
+          <button onClick={() => setShowModelSel(!showModelSel)} className="flex items-center justify-between w-full text-xs text-agnes-text-secondary hover:text-agnes-text-primary">
+            <span>生成模型选择</span>
+            {showModelSel ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+          <div className={`overflow-hidden transition-all duration-200 ${showModelSel ? 'max-h-60 mt-2' : 'max-h-0'}`}>
+            <div className="space-y-2">
+              <div className="text-[10px] text-agnes-text-muted uppercase tracking-wider mb-1">图像模型</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { id: 'gpt-image-2', name: 'GPT-Image-2' },
+                  { id: 'nano-banana-pro', name: 'Nano Banana Pro' },
+                  { id: 'nano-banana-2', name: 'Nano Banana 2' },
+                  { id: 'agnes-image-2.0', name: 'Agnes Image 2.0 Flash' },
+                  { id: 'agnes-image-2.1', name: 'Agnes Image 2.1 Flash' },
+                ].map((m) => (
+                  <button key={m.id}
+                    onClick={() => { setSelectedImageModel(m.id); showToast('success', `已选择 ${m.name}`) }}
+                    className={`text-left px-2 py-1.5 rounded-md text-xs transition-all ${
+                      selectedImageModel === m.id
+                        ? 'bg-agnes-purple/20 text-agnes-purple border border-agnes-purple/40'
+                        : 'bg-agnes-card border border-agnes-border text-agnes-text-secondary hover:text-agnes-text-primary'
+                    }`}
+                  >
+                    {m.name}
+                    {m.id === 'agnes-image-2.1' && <span className="ml-1 text-[9px] text-agnes-cyan">默认</span>}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] text-agnes-text-muted uppercase tracking-wider mb-1 mt-2">视频模型</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { id: 'agnes-video-v2.0', name: 'Agnes Video V2.0' },
+                  { id: 'seedance-2.0', name: 'Seedance 2.0' },
+                ].map((m) => (
+                  <button key={m.id}
+                    onClick={() => {
+                      if (m.id === 'seedance-2.0') {
+                        showToast('warning', '该模型接入中，敬请期待')
+                      } else {
+                        setSelectedVideoModel(m.id)
+                        showToast('success', `已选择 ${m.name}`)
+                      }
+                    }}
+                    disabled={m.id === 'seedance-2.0'}
+                    className={`text-left px-2 py-1.5 rounded-md text-xs transition-all ${
+                      m.id === 'seedance-2.0'
+                        ? 'bg-agnes-card/50 border border-agnes-border text-agnes-text-muted cursor-not-allowed'
+                        : selectedVideoModel === m.id
+                          ? 'bg-agnes-cyan/20 text-agnes-cyan border border-agnes-cyan/40'
+                          : 'bg-agnes-card border border-agnes-border text-agnes-text-secondary hover:text-agnes-text-primary'
+                    }`}
+                  >
+                    {m.name}
+                    {m.id === 'agnes-video-v2.0' && <span className="ml-1 text-[9px] text-agnes-cyan">默认</span>}
+                    {m.id === 'seedance-2.0' && <span className="ml-1 text-[9px] text-agnes-warning">接入中</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="shrink-0 border-t border-agnes-border bg-agnes-bg-secondary p-4">

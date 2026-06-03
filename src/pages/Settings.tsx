@@ -179,7 +179,14 @@ export default function Settings() {
               <div className="flex items-center gap-2 mb-4"><Crown className="w-5 h-5 text-agnes-warning" /><h3 className="text-base font-medium text-agnes-text-primary">会员信息</h3></div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-agnes-bg-secondary"><span className="text-sm text-agnes-text-secondary">会员等级</span><div className="flex items-center gap-1.5"><Crown className="w-4 h-4 text-agnes-warning" /><span className="text-sm font-medium text-agnes-warning">Pro</span></div></div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-agnes-bg-secondary"><span className="text-sm text-agnes-text-secondary">积分</span><div className="flex items-center gap-1.5"><Coins className="w-4 h-4 text-agnes-warning" /><span className="text-sm font-medium text-agnes-text-primary">2,580 积分</span></div></div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-agnes-bg-secondary"><span className="text-sm text-agnes-text-secondary">存储空间</span><span className="text-sm font-medium text-agnes-text-primary">50 GB / 50 GB</span></div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-agnes-bg-secondary">
+                  <span className="text-sm text-agnes-text-secondary">积分</span>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5"><Coins className="w-4 h-4 text-agnes-warning" /><span className="text-sm font-medium text-agnes-text-primary">2,580 积分</span></div>
+                    <p className="text-[10px] text-agnes-text-muted mt-0.5">会员每次消耗 2000 积分 · 非会员 100 积分</p>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-agnes-bg-secondary"><span className="text-sm text-agnes-text-secondary">到期时间</span><span className="text-sm text-agnes-text-primary">2027-12-31</span></div>
               </div>
             </div>

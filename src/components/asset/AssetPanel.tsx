@@ -129,6 +129,8 @@ export default function AssetPanel() {
   const [newTplPrompt, setNewTplPrompt] = useState('')
   const [newTplType, setNewTplType] = useState<'prompt' | 'params' | 'style'>('prompt')
   const [showUpgradeCard, setShowUpgradeCard] = useState(false)
+  const [showManagePanel, setShowManagePanel] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const recentAssets = mockAssets.slice(0, 8)
   const favoriteAssets = mockAssets.filter((a) => a.favorited)
@@ -433,11 +435,11 @@ export default function AssetPanel() {
             >
               <Crown className="w-3 h-3" />升级会员
             </button>
-            <button className="text-xs text-agnes-purple hover:text-agnes-cyan transition-colors">管理</button>
+            <button onClick={() => setShowManagePanel(!showManagePanel)} className="text-xs text-agnes-purple hover:text-agnes-cyan transition-colors">管理</button>
           </div>
         </div>
-        <Progress value={0.6} max={3} size="md" />
-        <p className="text-[11px] text-agnes-text-muted mt-1.5">0.6 GB / 3 GB</p>
+        <Progress value={0.3} max={1} size="md" />
+        <p className="text-[11px] text-agnes-text-muted mt-1.5">0.3 GB / 1 GB</p>
 
         {showUpgradeCard && (
           <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 glass rounded-xl p-3 shadow-xl animate-fade-in z-30">
@@ -448,7 +450,7 @@ export default function AssetPanel() {
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-white/[0.03]">
                 <span className="text-agnes-text-secondary">免费用户</span>
-                <span className="font-medium text-agnes-text-primary">3 GB 存储</span>
+                <span className="font-medium text-agnes-text-primary">1 GB 存储</span>
               </div>
               <div className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-agnes-purple/10">
                 <span className="text-agnes-purple">Pro 会员</span>
@@ -464,6 +466,55 @@ export default function AssetPanel() {
             </Button>
           </div>
         )}
+        {showManagePanel && (
+          <div className="mt-3 p-3 rounded-card bg-agnes-card border border-agnes-border space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-agnes-text-secondary">存储使用详情</span>
+                <span className="text-agnes-text-muted">0.3 GB / 1 GB</span>
+              </div>
+              <Progress value={0.3} max={1} size="sm" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => showToast('info', '数据迁移功能开发中')}>
+                迁移数据
+              </Button>
+              <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => setShowClearConfirm(true)}>
+                清空数据
+              </Button>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-agnes-text-secondary">升级空间</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button onClick={() => showToast('info', '升级功能即将开放')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                  10 GB
+                  <span className="block text-agnes-text-muted">¥19.9/月</span>
+                </button>
+                <button onClick={() => showToast('info', '升级功能即将开放')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                  20 GB
+                  <span className="block text-agnes-text-muted">¥29.9/月</span>
+                </button>
+                <button onClick={() => showToast('info', '升级功能即将开放')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                  50 GB
+                  <span className="block text-agnes-text-muted">¥49.9/月</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-agnes-card border border-agnes-border rounded-xl p-5 w-[320px] shadow-xl animate-fade-in">
+              <p className="text-sm text-agnes-text-primary mb-5">确定要清空所有本地缓存数据吗？此操作不可恢复</p>
+              <div className="flex gap-3 justify-end">
+                <Button variant="secondary" size="sm" onClick={() => setShowClearConfirm(false)}>取消</Button>
+                <Button variant="danger" size="sm" onClick={() => { setShowClearConfirm(false); showToast('success', '缓存数据已清空') }}>确认</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3 mt-1.5">
           <button className="text-[10px] text-agnes-text-muted hover:text-agnes-purple transition-colors">清理缓存</button>
           <button className="text-[10px] text-agnes-text-muted hover:text-agnes-purple transition-colors">查看详情</button>

@@ -92,7 +92,7 @@ function TaskStatusBar({ task }: { task: ReturnType<typeof useTaskStore.getState
   }, [task.createdAt, task.status])
   const chipVariant = task.status === 'success' ? 'success' : task.status === 'failed' ? 'error' : task.status === 'running' ? 'purple' : task.status === 'queued' ? 'warning' : 'default'
   return (
-    <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-agnes-border bg-agnes-bg-secondary/60">
+    <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-agnes-border bg-agnes-bg-secondary/60 h-auto">
       <Chip variant={chipVariant}>{getStatusLabel(task.status)}</Chip>
       <span className="text-xs text-agnes-text-muted">{formatDuration(elapsed)}</span>
       {(task.status === 'running' || task.status === 'queued') && (
@@ -332,19 +332,21 @@ export default function PreviewArea() {
   const isVideo = currentTask.type === 'video'
 
   return (
-    <div className="flex-1 flex flex-col bg-agnes-bg min-h-0 relative">
-      <ModeBadge mode={currentMode} />
+    <div className="flex-1 flex flex-col bg-agnes-bg min-h-0 relative overflow-hidden">
       <TaskStatusBar task={currentTask} />
       {selectMode && selectedItems.size > 0 && (
         <BatchActionBar count={selectedItems.size} onBatchDownload={handleBatchDownload} onBatchVideo={handleBatchVideo} onCancel={cancelSelect} />
       )}
-      {currentTask.status === 'running' || currentTask.status === 'queued' ? (
-        <ShimmerPlaceholder />
-      ) : isVideo ? (
-        <VideoPreview url={previewUrl} zoom={zoom} />
-      ) : (
-        <ImagePreview url={previewUrl} zoom={zoom} onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
-      )}
+      <div className="flex-1 min-h-0 relative overflow-hidden">
+        <ModeBadge mode={currentMode} />
+        {currentTask.status === 'running' || currentTask.status === 'queued' ? (
+          <ShimmerPlaceholder />
+        ) : isVideo ? (
+          <VideoPreview url={previewUrl} zoom={zoom} />
+        ) : (
+          <ImagePreview url={previewUrl} zoom={zoom} onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
+        )}
+      </div>
       <ActionToolbar actions={toolbar} favorited={favorited} onToggleFavorite={handleToggleFavorite} onAction={handleAction} selectMode={selectMode} onSelectModeToggle={toggleSelectMode} />
       <VersionThumbnails activeIndex={activeThumb} onSelect={setActiveThumb} selectMode={selectMode} selectedItems={selectedItems} onToggleSelect={toggleSelectItem} />
       <TaskLog task={currentTask} />

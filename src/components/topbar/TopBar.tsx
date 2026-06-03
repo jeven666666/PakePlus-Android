@@ -12,7 +12,6 @@ import {
   Bell,
   Settings,
   User,
-  Zap,
   PanelLeftClose,
   PanelRightClose,
   PanelLeftOpen,
@@ -76,10 +75,18 @@ export default function TopBar() {
 
   return (
     <header className="glass fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 gap-3 overflow-hidden max-w-full">
-      <div className="flex items-center gap-2 shrink-0">
-        <Zap size={20} className="text-agnes-cyan" />
-        <span className="gradient-text text-lg font-bold tracking-tight">Agnes AI</span>
-        <span className="text-agnes-text-muted text-sm font-light">Studio</span>
+      <div className="flex items-center gap-2 shrink-0 cursor-pointer">
+        <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#7C5CFF"/>
+              <stop offset="100%" stopColor="#00D4FF"/>
+            </linearGradient>
+          </defs>
+          <path d="M25 80L42 20H58C68 20 75 27 75 38C75 48 70 55 62 58L78 82" stroke="url(#logoGrad)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M72 18L76 26L84 22L77 29L83 34L74 32L66 36L71 28Z" fill="#00D4FF"/>
+          <circle cx="86" cy="14" r="3" fill="#00D4FF"/>
+        </svg>
       </div>
 
       <div className="w-px h-6 bg-agnes-border mx-1" />
@@ -176,8 +183,7 @@ export default function TopBar() {
         </button>
 
         <div className="flex items-center gap-1.5 text-xs text-agnes-text-secondary">
-          <Zap size={12} className="text-agnes-cyan" />
-          <span>1,280 / 5,000</span>
+          <span className="font-mono">128 / 5000 积分</span>
         </div>
 
         <button
@@ -200,13 +206,13 @@ export default function TopBar() {
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             aria-label="用户"
-            className="w-8 h-8 rounded-full bg-agnes-purple/20 border border-agnes-purple/30 flex items-center justify-center text-agnes-purple hover:bg-agnes-purple/30 transition-colors"
+            className="relative w-8 h-8 rounded-full bg-agnes-purple/20 border border-agnes-purple/30 flex items-center justify-center text-agnes-purple hover:bg-agnes-purple/30 transition-colors"
           >
             <User size={14} />
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-agnes-bg-secondary border border-agnes-border shadow-2xl shadow-black/40 py-2 z-50 backdrop-blur-xl">
+            <div className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-agnes-bg-secondary border border-agnes-border shadow-2xl shadow-black/40 py-2 z-[100] backdrop-blur-xl">
               <div className="px-4 py-3">
                 <div className="text-sm font-medium text-agnes-text-primary">Agnes 用户</div>
                 <div className="text-xs text-agnes-text-muted mt-0.5">user@agnes.ai</div>
