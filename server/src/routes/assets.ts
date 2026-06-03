@@ -71,8 +71,11 @@ router.delete('/:id', authMiddleware, (req: Request, res: Response) => {
     }
 
     // Delete files
-    if (asset.file_path && fs.existsSync(asset.file_path)) fs.unlinkSync(asset.file_path);
-    if (asset.thumbnail_path && fs.existsSync(asset.thumbnail_path)) fs.unlinkSync(asset.thumbnail_path);
+    const resolvedFilePath = path.resolve(asset.file_path);
+    const uploadDir = path.resolve(UPLOAD_DIR);
+    if (resolvedFilePath.startsWith(uploadDir) && fs.existsSync(resolvedFilePath)) fs.unlinkSync(resolvedFilePath);
+    const resolvedThumbPath = asset.thumbnail_path ? path.resolve(asset.thumbnail_path) : '';
+    if (resolvedThumbPath.startsWith(uploadDir) && fs.existsSync(resolvedThumbPath)) fs.unlinkSync(resolvedThumbPath);
 
     // Update storage
     db.prepare('UPDATE users SET storage_used = MAX(0, storage_used - ?), updated_at = unixepoch() WHERE id = ?')
@@ -99,8 +102,11 @@ router.post('/batch-delete', authMiddleware, (req: Request, res: Response) => {
 
     let freedStorage = 0;
     for (const asset of assets) {
-      if (asset.file_path && fs.existsSync(asset.file_path)) fs.unlinkSync(asset.file_path);
-      if (asset.thumbnail_path && fs.existsSync(asset.thumbnail_path)) fs.unlinkSync(asset.thumbnail_path);
+      const resolvedFilePath = path.resolve(asset.file_path);
+      const uploadDir = path.resolve(UPLOAD_DIR);
+      if (resolvedFilePath.startsWith(uploadDir) && fs.existsSync(resolvedFilePath)) fs.unlinkSync(resolvedFilePath);
+      const resolvedThumbPath = asset.thumbnail_path ? path.resolve(asset.thumbnail_path) : '';
+      if (resolvedThumbPath.startsWith(uploadDir) && fs.existsSync(resolvedThumbPath)) fs.unlinkSync(resolvedThumbPath);
       freedStorage += asset.file_size / (1024 * 1024);
     }
 
@@ -124,7 +130,13 @@ router.get('/:id/file', authMiddleware, (req: Request, res: Response) => {
       res.status(404).json({ error: '文件不存在' });
       return;
     }
-    res.sendFile(path.resolve(asset.file_path));
+    const resolvedPath = path.resolve(asset.file_path);
+    const uploadDir = path.resolve(UPLOAD_DIR);
+    if (!resolvedPath.startsWith(uploadDir)) {
+      res.status(403).json({ error: '禁止访问' });
+      return;
+    }
+    res.sendFile(resolvedPath);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

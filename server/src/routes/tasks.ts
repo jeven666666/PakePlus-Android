@@ -65,13 +65,16 @@ router.post('/', authMiddleware, (req: Request, res: Response) => {
     const id = uuid();
     const now = Math.floor(Date.now() / 1000);
 
-    db.prepare(`
-      INSERT INTO tasks (id, user_id, type, status, prompt, negative_prompt, params, model, credits_cost, created_at, updated_at)
-      VALUES (?, ?, ?, 'submitted', ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.user!.userId, type, prompt, negativePrompt || '', JSON.stringify(params || {}), model || '', cost, now, now);
+    const transaction = db.transaction(() => {
+      db.prepare(`
+        INSERT INTO tasks (id, user_id, type, status, prompt, negative_prompt, params, model, credits_cost, created_at, updated_at)
+        VALUES (?, ?, ?, 'submitted', ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, req.user!.userId, type, prompt, negativePrompt || '', JSON.stringify(params || {}), model || '', cost, now, now);
 
-    // Deduct credits
-    db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+      db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+    });
+
+    transaction();
 
     res.status(201).json({
       id,
@@ -99,10 +102,12 @@ router.post('/:id/cancel', authMiddleware, (req: Request, res: Response) => {
       return;
     }
 
-    db.prepare("UPDATE tasks SET status = 'canceled', updated_at = unixepoch() WHERE id = ?").run(req.params.id);
+    const transaction = db.transaction(() => {
+      db.prepare("UPDATE tasks SET status = 'canceled', updated_at = unixepoch() WHERE id = ?").run(req.params.id);
+      db.prepare('UPDATE users SET credits = credits + ?, updated_at = unixepoch() WHERE id = ?').run(task.credits_cost, req.user!.userId);
+    });
 
-    // Refund credits
-    db.prepare('UPDATE users SET credits = credits + ?, updated_at = unixepoch() WHERE id = ?').run(task.credits_cost, req.user!.userId);
+    transaction();
 
     res.json({ success: true });
   } catch (err: any) {

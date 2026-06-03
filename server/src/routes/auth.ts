@@ -14,6 +14,10 @@ router.post('/register', (req: Request, res: Response) => {
       res.status(400).json({ error: '邮箱和密码不能为空' });
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: '邮箱格式不正确' });
+      return;
+    }
     if (password.length < 6) {
       res.status(400).json({ error: '密码至少6位' });
       return;
@@ -115,9 +119,9 @@ router.put('/me', authMiddleware, (req: Request, res: Response) => {
     const updates: string[] = [];
     const values: any[] = [];
 
-    if (displayName !== undefined) { updates.push('display_name = ?'); values.push(displayName); }
-    if (signature !== undefined) { updates.push('signature = ?'); values.push(signature); }
-    if (avatarUrl !== undefined) { updates.push('avatar_url = ?'); values.push(avatarUrl); }
+    if (typeof displayName === 'string') { updates.push('display_name = ?'); values.push(displayName.slice(0, 50)); }
+    if (typeof signature === 'string') { updates.push('signature = ?'); values.push(signature.slice(0, 200)); }
+    if (typeof avatarUrl === 'string') { updates.push('avatar_url = ?'); values.push(avatarUrl.slice(0, 500)); }
 
     if (updates.length === 0) {
       res.status(400).json({ error: '没有可更新的字段' });
