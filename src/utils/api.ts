@@ -224,6 +224,22 @@ class ApiClient {
     return this.request<any>(`/editor/video/task/${taskId}`);
   }
 
+  // Storage
+  async getStoragePlans() {
+    return this.request<any>('/storage/plans');
+  }
+
+  async upgradeStorage(plan: string) {
+    return this.request<any>('/storage/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    });
+  }
+
+  async getStorageUsage() {
+    return this.request<any>('/storage/usage');
+  }
+
   // Assets
   async getAssets(params?: { type?: string; favorited?: boolean; limit?: number; offset?: number }) {
     const query = new URLSearchParams();

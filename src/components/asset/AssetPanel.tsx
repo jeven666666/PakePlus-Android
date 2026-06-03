@@ -822,15 +822,15 @@ export default function AssetPanel() {
             <div className="space-y-1.5">
               <p className="text-xs font-medium text-agnes-text-secondary">升级空间</p>
               <div className="grid grid-cols-3 gap-1.5">
-                <button onClick={() => navigate('/membership')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                <button onClick={() => navigate('/storage-upgrade')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
                   10 GB
                   <span className="block text-agnes-text-muted">¥19.9/月</span>
                 </button>
-                <button onClick={() => navigate('/membership')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                <button onClick={() => navigate('/storage-upgrade')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
                   20 GB
                   <span className="block text-agnes-text-muted">¥29.9/月</span>
                 </button>
-                <button onClick={() => navigate('/membership')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                <button onClick={() => navigate('/storage-upgrade')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
                   50 GB
                   <span className="block text-agnes-text-muted">¥49.9/月</span>
                 </button>
