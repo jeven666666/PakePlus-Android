@@ -23,18 +23,19 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="authLogo" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#7C5CFF" />
-                  <stop offset="1" stopColor="#00D4FF" />
+                <linearGradient id="authLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7C5CFF"/>
+                  <stop offset="100%" stopColor="#00D4FF"/>
                 </linearGradient>
               </defs>
-              <path d="M20 2L37 11V29L20 38L3 29V11L20 2Z" stroke="url(#authLogo)" strokeWidth="2" fill="none" />
-              <path d="M20 8L31 14V26L20 32L9 26V14L20 8Z" fill="url(#authLogo)" fillOpacity="0.15" stroke="url(#authLogo)" strokeWidth="1" />
-              <circle cx="20" cy="20" r="4" fill="url(#authLogo)" />
+              <path d="M25 80L42 20H58C68 20 75 27 75 38C75 48 70 55 62 58L78 82" stroke="url(#authLogoGrad)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M72 18L76 26L84 22L77 29L83 34L74 32L66 36L71 28Z" fill="#00D4FF"/>
+              <circle cx="86" cy="14" r="3" fill="#00D4FF"/>
             </svg>
             <span className="gradient-text text-2xl font-bold tracking-tight">Agnes AI</span>
+            <span className="text-agnes-text-muted text-lg font-light">Studio</span>
           </div>
           <p className="text-agnes-text-muted text-sm">多模态 AI 创作控制台</p>
         </div>
