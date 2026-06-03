@@ -203,10 +203,28 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
                 {g.items.map((item) => {
                   const ItemIcon = item.icon
                   return (
-                    <button key={item.label} onClick={() => {
-                      const editTaskId = useTaskStore.getState().createTask({ type: 'video', prompt: `视频编辑: ${item.label}`, negativePrompt: '', params: { editType: item.label } })
-                      useTaskStore.getState().setCurrentTask(editTaskId)
-                      showToast('success', `已提交「${item.label}」任务`)
+                    <button key={item.label} onClick={async () => {
+                      try {
+                        const res = await api.processVideoEditor({ 
+                          tool: item.label,
+                          params: { sourceTaskId: currentTask?.id }
+                        })
+                        if (res.error) {
+                          showToast('error', res.error)
+                        } else {
+                          showToast('success', `已提交「${item.label}」任务，消耗 ${res.data?.creditsCost || 0} 积分`)
+                          // 创建本地任务并跟踪
+                          const taskId = useTaskStore.getState().createTask({ 
+                            type: 'video', 
+                            prompt: `视频编辑: ${item.label}`, 
+                            negativePrompt: '', 
+                            params: { editType: item.label } 
+                          })
+                          useTaskStore.getState().setCurrentTask(taskId)
+                        }
+                      } catch (err: any) {
+                        showToast('error', `操作失败: ${err.message}`)
+                      }
                       setMenuOpen(false)
                     }}
                       className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-agnes-bg-secondary transition-colors duration-150">

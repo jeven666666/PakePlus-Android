@@ -201,6 +201,29 @@ class ApiClient {
     });
   }
 
+  // Video Editor
+  async getVideoEditorTools() {
+    return this.request<any>('/editor/video/tools');
+  }
+
+  async processVideoEditor(data: { videoId?: string; tool: string; params?: any }) {
+    return this.request<any>('/editor/video/process', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async batchProcessVideoEditor(data: { videoId?: string; tools: string[] }) {
+    return this.request<any>('/editor/video/batch', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getVideoEditorTask(taskId: string) {
+    return this.request<any>(`/editor/video/task/${taskId}`);
+  }
+
   // Assets
   async getAssets(params?: { type?: string; favorited?: boolean; limit?: number; offset?: number }) {
     const query = new URLSearchParams();
