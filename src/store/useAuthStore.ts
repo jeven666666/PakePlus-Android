@@ -13,6 +13,8 @@ interface User {
   storageUsed: number;
   storageLimit: number;
   inviteCode: string;
+  role: 'user' | 'admin' | 'superadmin';
+  isAdmin: boolean;
 }
 
 interface AuthState {

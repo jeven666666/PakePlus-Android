@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "migrate": "ts-node src/models/migrate.ts",
+    "create-admin": "ts-node src/models/create-admin.ts"
   },
   "keywords": [],
   "author": "",

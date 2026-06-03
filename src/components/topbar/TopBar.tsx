@@ -274,6 +274,16 @@ export default function TopBar() {
                 <span>邀请码: {user?.inviteCode || ''}</span>
               </Link>
               <div className="h-px bg-agnes-border mx-2" />
+              {user?.isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-agnes-text-primary hover:bg-white/5 transition-colors"
+                >
+                  <Settings size={16} className="text-agnes-purple" />
+                  <span className="text-agnes-purple font-medium">管理后台</span>
+                </Link>
+              )}
               <Link
                 to="/settings"
                 onClick={() => setUserMenuOpen(false)}

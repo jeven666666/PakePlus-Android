@@ -240,6 +240,54 @@ class ApiClient {
     return this.request<any>('/storage/usage');
   }
 
+  // Admin
+  async getAdminStats() {
+    return this.request<any>('/admin/stats');
+  }
+
+  async getUsers(params: { page?: number; limit?: number; search?: string; status?: string; role?: string }) {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', params.page.toString());
+    if (params.limit) query.set('limit', params.limit.toString());
+    if (params.search) query.set('search', params.search);
+    if (params.status) query.set('status', params.status);
+    if (params.role) query.set('role', params.role);
+    return this.request<any>(`/admin/users?${query.toString()}`);
+  }
+
+  async getUser(userId: string) {
+    return this.request<any>(`/admin/users/${userId}`);
+  }
+
+  async updateUser(userId: string, data: any) {
+    return this.request<any>(`/admin/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async addUserCredits(userId: string, amount: number, description?: string) {
+    return this.request<any>(`/admin/users/${userId}/credits`, {
+      method: 'POST',
+      body: JSON.stringify({ amount, description }),
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.request<any>(`/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminTasks(params: { page?: number; limit?: number; status?: string; type?: string }) {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', params.page.toString());
+    if (params.limit) query.set('limit', params.limit.toString());
+    if (params.status) query.set('status', params.status);
+    if (params.type) query.set('type', params.type);
+    return this.request<any>(`/admin/tasks?${query.toString()}`);
+  }
+
   // Assets
   async getAssets(params?: { type?: string; favorited?: boolean; limit?: number; offset?: number }) {
     const query = new URLSearchParams();

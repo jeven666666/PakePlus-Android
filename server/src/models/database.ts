@@ -26,6 +26,8 @@ db.exec(`
     credits INTEGER DEFAULT 100,
     storage_used REAL DEFAULT 0,
     storage_limit REAL DEFAULT 1,
+    role TEXT DEFAULT 'user' CHECK(role IN ('user','admin','superadmin')),
+    is_active INTEGER DEFAULT 1,
     invite_code TEXT UNIQUE,
     invited_by TEXT,
     created_at INTEGER NOT NULL DEFAULT (unixepoch()),

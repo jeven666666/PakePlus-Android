@@ -82,6 +82,7 @@ import chatRoutes from './routes/chat';
 import ttsRoutes from './routes/tts';
 import editorRoutes from './routes/editor';
 import storageRoutes from './routes/storage';
+import adminRoutes from './routes/admin';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
@@ -96,6 +97,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/tts', ttsRoutes);
 app.use('/api/editor', editorRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

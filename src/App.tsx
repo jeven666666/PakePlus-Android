@@ -9,6 +9,7 @@ const Invite = lazy(() => import('@/pages/Invite'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 const Auth = lazy(() => import('@/pages/Auth'))
 const StorageUpgrade = lazy(() => import('@/pages/StorageUpgrade'))
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
 
 import ErrorBoundary from '@/components/ErrorBoundary'
 import ToastContainer from '@/components/ui/Toast'
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
             <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
             <Route path="/storage-upgrade" element={<ProtectedRoute><StorageUpgrade /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

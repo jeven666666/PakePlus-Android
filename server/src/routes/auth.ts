@@ -39,10 +39,14 @@ router.post('/register', (req: Request, res: Response) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(id, email, passwordHash, name, inviteCode, 100, 1);
 
-    const token = generateToken({ userId: id, email });
+    const token = generateToken({ userId: id, email, role: 'user' });
     res.status(201).json({
       token,
-      user: { id, email, displayName: name, membership: 'free', credits: 100, inviteCode },
+      user: { 
+        id, email, displayName: name, 
+        membership: 'free', credits: 100, 
+        inviteCode, role: 'user' 
+      },
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -64,7 +68,7 @@ router.post('/login', (req: Request, res: Response) => {
       return;
     }
 
-    const token = generateToken({ userId: user.id, email: user.email });
+    const token = generateToken({ userId: user.id, email: user.email, role: user.role || 'user' });
     res.json({
       token,
       user: {
@@ -78,6 +82,8 @@ router.post('/login', (req: Request, res: Response) => {
         storageUsed: user.storage_used,
         storageLimit: user.storage_limit,
         inviteCode: user.invite_code,
+        role: user.role || 'user',
+        isAdmin: ['admin', 'superadmin'].includes(user.role || 'user'),
       },
     });
   } catch (err: any) {
@@ -105,6 +111,8 @@ router.get('/me', authMiddleware, (req: Request, res: Response) => {
       storageUsed: user.storage_used,
       storageLimit: user.storage_limit,
       inviteCode: user.invite_code,
+      role: user.role || 'user',
+      isAdmin: ['admin', 'superadmin'].includes(user.role || 'user'),
       createdAt: user.created_at,
     });
   } catch (err: any) {
