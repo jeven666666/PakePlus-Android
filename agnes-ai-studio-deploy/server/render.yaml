@@ -1,0 +1,30 @@
+{
+  "name": "agnes-ai-backend",
+  "runtime": "nodejs18",
+  "region": "singapore",
+  "buildCommand": "npm install && npm run build",
+  "startCommand": "node dist/index.js",
+  "healthCheckPath": "/api/health",
+  "envVars": {
+    "NODE_ENV": {
+      "value": "production"
+    },
+    "PORT": {
+      "value": "3001"
+    },
+    "JWT_SECRET": {
+      "sync": false
+    },
+    "DB_PATH": {
+      "value": "./data/agnes.db"
+    },
+    "UPLOAD_DIR": {
+      "value": "./uploads"
+    }
+  },
+  "disk": {
+    "name": "agnes-data",
+    "mountPath": "/app/data",
+    "sizeGb": 1
+  }
+}

@@ -1,0 +1,23 @@
+Agnes AI Studio 部署包
+========================================
+
+包含内容：
+1. 完整的前端代码和构建文件
+2. 完整的后端代码和构建文件
+3. 所有部署配置文件
+4. 部署脚本和文档
+
+快速开始：
+1. 解压此文件
+2. cd agnes-ai-studio-deploy
+3. ./quick-deploy.sh  （Linux/Mac）
+4. 或按照 FREE_DEPLOYMENT_GUIDE.md 部署到云平台
+
+详细文档：
+- README.md - 项目说明
+- FREE_DEPLOYMENT_GUIDE.md - 免费部署指南
+- DEPLOYMENT_CHECKLIST.md - 部署检查清单
+- ADMIN_GUIDE.md - 管理员使用指南
+
+如有问题，请查阅文档或提交 Issue。
+========================================

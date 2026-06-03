@@ -1,0 +1,62 @@
+# ==============================================
+# Agnes AI Studio - Docker Compose 配置
+# ==============================================
+
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: agnes-ai-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-your-production-secret-change-this}
+      - DB_PATH=/data/agnes.db
+      - UPLOAD_DIR=/data/uploads
+      - CORS_ORIGIN=http://localhost:3000,http://localhost:5175
+    volumes:
+      - backend-data:/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - agnes-network
+
+  # 前端服务
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agnes-ai-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - agnes-network
+
+# 数据卷
+volumes:
+  backend-data:
+    driver: local
+
+# 网络
+networks:
+  agnes-network:
+    driver: bridge
