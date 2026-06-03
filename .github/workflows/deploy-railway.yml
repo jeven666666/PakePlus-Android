@@ -1,0 +1,67 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Railway Login
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway login --token $RAILWAY_TOKEN
+
+      - name: Get Railway Project
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway link --token $RAILWAY_TOKEN --project ${{ secrets.RAILWAY_PROJECT_ID }}
+
+      - name: Set Environment Variables
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway variables set JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          railway variables set NODE_ENV="production"
+          railway variables set PORT="3001"
+        continue-on-error: true
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --token $RAILWAY_TOKEN --service api
+
+      - name: Get Railway URL
+        id: railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "RAILWAY_URL=$(railway status --token $RAILWAY_TOKEN | grep -oP 'https?://\S+\.up\.railway\.app')" >> $GITHUB_OUTPUT
+
+      - name: Update Vercel Environment
+        if: success()
+        run: |
+          echo "Backend deployed successfully"
+          echo "Please update Vercel/Natlify config with the Railway URL"
