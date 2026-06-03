@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import useAppStore from '@/store/useAppStore'
 import useTaskStore from '@/store/useTaskStore'
 import { showToast } from '@/components/ui/Toast'
@@ -60,6 +60,27 @@ export default function ControlPanel() {
   ])
   const [autoInterpolate, setAutoInterpolate] = useState(true)
   const [interpMethod, setInterpMethod] = useState('风格保持')
+  const [optimizing, setOptimizing] = useState(false)
+
+  const appliedTemplate = useAppStore((s) => s.appliedTemplate)
+
+  useEffect(() => {
+    if (!appliedTemplate) return
+    if (appliedTemplate.prompt !== undefined) setPrompt(appliedTemplate.prompt)
+    if (appliedTemplate.negativePrompt !== undefined) setNegativePrompt(appliedTemplate.negativePrompt)
+    if (appliedTemplate.style !== undefined) setSelectedStyle(appliedTemplate.style)
+    if (appliedTemplate.params) {
+      const p = appliedTemplate.params
+      if (p.aspectRatio !== undefined) setAspectRatio(p.aspectRatio)
+      if (p.resolution !== undefined) setResolution(p.resolution)
+      if (p.steps !== undefined) setSteps(p.steps)
+      if (p.cfgScale !== undefined) setCfgScale(p.cfgScale)
+      if (p.hdFix !== undefined) setHdFix(p.hdFix)
+      if (p.creativity !== undefined) setCreativity(p.creativity)
+      if (p.detail !== undefined) setDetail(p.detail)
+    }
+    useAppStore.getState().applyTemplate(null)
+  }, [appliedTemplate])
 
   if (mode === 'chat' || mode === 'tts') return null
 
@@ -192,13 +213,33 @@ export default function ControlPanel() {
     </section>
   )
 
-  const PromptSec = ({ ph, rows = 4, showOptimize = true }: { ph: string; rows?: number; showOptimize?: boolean }) => (
+  const PromptSec = ({ ph, rows = 4, showOptimize = true }: { ph: string; rows?: number; showOptimize?: boolean }) => {
+    const handleOptimize = async () => {
+      if (!prompt.trim()) { showToast('warning', '请先输入提示词'); return }
+      setOptimizing(true)
+      try {
+        const apiClient = (await import('@/utils/api')).default
+        const res = await apiClient.optimizePrompt(prompt)
+        if (res.error) {
+          showToast('error', res.error)
+        } else if (res.data?.optimizedPrompt) {
+          setPrompt(res.data.optimizedPrompt.slice(0, MAX_PROMPT))
+          showToast('success', '提示词优化完成')
+        }
+      } catch (err: any) {
+        showToast('error', err.message || '优化失败')
+      } finally {
+        setOptimizing(false)
+      }
+    }
+    return (
     <section><label className="block text-agnes-text-secondary text-xs mb-1.5">正向提示词</label>
       <div className="relative"><textarea value={prompt} onChange={(e) => setPrompt(e.target.value.slice(0, MAX_PROMPT))} placeholder={ph} rows={rows} className={taCls} />
         <div className="flex items-center justify-between mt-1.5"><span className="text-xs text-agnes-text-muted font-mono">{prompt.length}/{MAX_PROMPT}</span>
-          {showOptimize && <button className="flex items-center gap-1 text-xs text-agnes-cyan hover:text-agnes-purple transition-colors"><Sparkles size={14} /> AI 优化</button>}</div></div>
+          {showOptimize && <button onClick={handleOptimize} disabled={optimizing} className="flex items-center gap-1 text-xs text-agnes-cyan hover:text-agnes-purple transition-colors disabled:opacity-60 disabled:cursor-not-allowed">{optimizing ? <><span className="w-3.5 h-3.5 border-2 border-agnes-cyan/30 border-t-agnes-cyan rounded-full animate-spin" />优化中…</> : <><Sparkles size={14} /> AI 优化</>}</button>}</div></div>
     </section>
-  )
+    )
+  }
 
   const FrameUpload = ({ label, frame, setter, ref }: { label: string; frame: string[]; setter: React.Dispatch<React.SetStateAction<string[]>>; ref: React.RefObject<HTMLInputElement | null> }) => (
     <div><span className="text-xs text-agnes-text-muted mb-1 block">{label}</span>

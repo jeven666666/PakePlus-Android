@@ -6,6 +6,8 @@ import Auth from '@/pages/Auth'
 import Membership from '@/pages/Membership'
 import Credits from '@/pages/Credits'
 import Invite from '@/pages/Invite'
+import NotFound from '@/pages/NotFound'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import ToastContainer from '@/components/ui/Toast'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -28,16 +30,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/membership" element={<ProtectedRoute><Membership /></ProtectedRoute>} />
-        <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
-        <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      <ToastContainer />
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/membership" element={<ProtectedRoute><Membership /></ProtectedRoute>} />
+          <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
+          <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <ToastContainer />
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

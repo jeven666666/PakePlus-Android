@@ -183,7 +183,12 @@ function ActionToolbar({ actions, favorited, onToggleFavorite, onAction, selectM
                       {g.items.map((item) => {
                         const ItemIcon = item.icon
                         return (
-                          <button key={item.label} onClick={() => { showToast('info', '视频编辑功能开发中'); setMenuOpen(false) }}
+                          <button key={item.label} onClick={() => {
+                            const editTaskId = useTaskStore.getState().createTask({ type: 'video', prompt: `视频编辑: ${item.label}`, negativePrompt: '', params: { editType: item.label } })
+                            useTaskStore.getState().setCurrentTask(editTaskId)
+                            showToast('success', `已提交「${item.label}」任务`)
+                            setMenuOpen(false)
+                          }}
                             className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg hover:bg-agnes-bg-secondary transition-colors duration-150">
                             <ItemIcon className="w-4 h-4 text-agnes-text-secondary" />
                             <span className="text-[10px] text-agnes-text-muted whitespace-nowrap">{item.label}</span>

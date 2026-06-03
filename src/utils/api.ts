@@ -144,6 +144,13 @@ class ApiClient {
     });
   }
 
+  async optimizePrompt(prompt: string) {
+    return this.request<{ optimizedPrompt: string }>('/chat/optimize', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    });
+  }
+
   // TTS
   async synthesizeTts(data: { text: string; voice?: string; model?: string; params?: any }) {
     return this.request<any>('/tts/synthesize', {

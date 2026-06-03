@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Star, Edit2, Trash2, TestTube, Shield, User, Palette, Globe, Check, X, Camera, Coins, Crown, Copy, Gift, Link as LinkIcon, Ticket, Save, Eye, EyeOff } from 'lucide-react'
 import useModelStore from '@/store/useModelStore'
@@ -42,6 +42,9 @@ export default function Settings() {
   const [nameInput, setNameInput] = useState('Agnes 用户')
   const [signature, setSignature] = useState('')
   const [avatarHover, setAvatarHover] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const avatarFileRef = useRef<HTMLInputElement>(null)
   const [redeemCode, setRedeemCode] = useState('')
 
   const openAdd = () => { setEditingModel(null); setFormData(emptyModel); setDrawerOpen(true) }
@@ -110,6 +113,25 @@ export default function Settings() {
   }
   const handleCopy = (text: string, label: string) => { navigator.clipboard.writeText(text); showToast('success', `${label}已复制`) }
   const handleRedeem = () => { if (!redeemCode.trim()) { showToast('error', '请输入兑换码'); return }; showToast('success', '兑换成功'); setRedeemCode('') }
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { showToast('error', '请选择图片文件'); return }
+    setAvatarUploading(true)
+    try {
+      const res = await api.uploadFile(file)
+      if (res.error || !res.fileUrl) { showToast('error', '头像上传失败'); return }
+      const updateRes = await api.updateProfile({ avatarUrl: res.fileUrl })
+      if (updateRes.error) { showToast('error', '头像更新失败'); return }
+      setAvatarUrl(res.fileUrl)
+      showToast('success', '头像已更新')
+    } catch {
+      showToast('error', '头像上传异常')
+    } finally {
+      setAvatarUploading(false)
+      if (avatarFileRef.current) avatarFileRef.current.value = ''
+    }
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -118,6 +140,7 @@ export default function Settings() {
         setDisplayName(meRes.data.displayName || 'Agnes 用户')
         setNameInput(meRes.data.displayName || 'Agnes 用户')
         setSignature(meRes.data.signature || '')
+        if (meRes.data.avatarUrl) setAvatarUrl(meRes.data.avatarUrl)
       }
       if (modelsRes.data) {
         const serverModels = Array.isArray(modelsRes.data) ? modelsRes.data : modelsRes.data.models || []
@@ -222,10 +245,14 @@ export default function Settings() {
           <div className="animate-fade-in space-y-6">
             <div className="p-6 rounded-card bg-agnes-card border border-agnes-border">
               <div className="flex flex-col items-center mb-6">
-                <div className="relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-agnes-purple via-agnes-cyan to-agnes-purple cursor-pointer" onMouseEnter={() => setAvatarHover(true)} onMouseLeave={() => setAvatarHover(false)} onClick={() => showToast('success', '头像上传功能开发中')}>
-                  <div className="w-full h-full rounded-full bg-agnes-card flex items-center justify-center overflow-hidden"><User className="w-10 h-10 text-agnes-text-muted" /></div>
-                  {avatarHover && <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center"><Camera className="w-6 h-6 text-white" /></div>}
+                <div className="relative w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-agnes-purple via-agnes-cyan to-agnes-purple cursor-pointer" onMouseEnter={() => setAvatarHover(true)} onMouseLeave={() => setAvatarHover(false)} onClick={() => !avatarUploading && avatarFileRef.current?.click()}>
+                  <div className="w-full h-full rounded-full bg-agnes-card flex items-center justify-center overflow-hidden">
+                    {avatarUrl ? <img src={avatarUrl} alt="头像" className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-agnes-text-muted" />}
+                  </div>
+                  {avatarUploading && <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center"><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /></div>}
+                  {!avatarUploading && avatarHover && <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center"><Camera className="w-6 h-6 text-white" /></div>}
                 </div>
+                <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
               <div className="space-y-4">
                 <div className="space-y-1.5">

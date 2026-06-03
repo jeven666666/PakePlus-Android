@@ -133,6 +133,21 @@ export default function ImageEditor() {
     reader.readAsDataURL(file)
   }
 
+  const handleExport = () => {
+    if (!imageSrc) { showToast('warning', '没有可导出的图片'); return }
+    try {
+      const link = document.createElement('a')
+      link.href = imageSrc
+      link.download = `agnes-export-${Date.now()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      showToast('success', '导出成功')
+    } catch {
+      showToast('error', '导出失败')
+    }
+  }
+
   const handleProcess = async () => {
     if (!imageSrc) { showToast('warning', '请先上传图片'); return }
     setProcessing(true)
@@ -565,7 +580,7 @@ export default function ImageEditor() {
               <Sparkles className="w-4 h-4" />开始处理
             </Button>
           )}
-          <Button variant="secondary" size="sm" className="w-full gap-1.5" onClick={() => showToast('info', '导出功能开发中')}>
+          <Button variant="secondary" size="sm" className="w-full gap-1.5" onClick={handleExport}>
             <Download className="w-3.5 h-3.5" />导出结果
           </Button>
           <Button variant="ghost" size="sm" className="w-full gap-1.5" onClick={() => setCurrentMode('text-to-video')}>

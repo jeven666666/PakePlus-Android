@@ -48,4 +48,40 @@ router.post('/completions', authMiddleware, async (req: Request, res: Response) 
   }
 });
 
+// Prompt optimization
+router.post('/optimize', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      res.status(400).json({ error: '提示词不能为空' });
+      return;
+    }
+
+    // Check credits (optimize is cheaper than chat)
+    const user: any = db.prepare('SELECT credits FROM users WHERE id = ?').get(req.user!.userId);
+    const cost = 2;
+    if (user.credits < cost) {
+      res.status(402).json({ error: '积分不足' });
+      return;
+    }
+
+    db.prepare('UPDATE users SET credits = credits - ?, updated_at = unixepoch() WHERE id = ?').run(cost, req.user!.userId);
+
+    // Generate optimized prompt (mock - in production, call actual LLM API with system prompt)
+    const systemInstruction = '你是一个专业的AI图像生成提示词优化专家。请优化用户提供的提示词，添加更多细节、更好的描述词和艺术术语，使其更加生动、具体和专业。只返回优化后的提示词，不要添加任何解释或额外说明。';
+
+    const optimizedVariations = [
+      `${prompt.trim()}, masterpiece, best quality, highly detailed, professional photography, cinematic lighting, 8k uhd, sharp focus, volumetric lighting, dramatic atmosphere`,
+      `${prompt.trim()}, exquisite detail, ultra high resolution, studio lighting, rich colors, artistic composition, photorealistic, award-winning, intricate details, soft bokeh`,
+      `${prompt.trim()}, stunning visual, hyper-detailed, professional grade, elegant composition, chiaroscuro lighting, vivid palette, fine art, high fidelity, immersive atmosphere`,
+    ];
+
+    const optimizedPrompt = optimizedVariations[Math.floor(Math.random() * optimizedVariations.length)];
+
+    res.json({ optimizedPrompt });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Heart, Download, RefreshCw, Upload, Clock, Image, Video, FileText, HardDrive, CheckSquare, Square, X, Plus, Pencil, Trash2, Crown, ChevronUp } from 'lucide-react'
-import { mockAssets, mockTemplates } from '@/utils/mockData'
+import { api } from '@/utils/api'
+import { useAuthStore } from '@/store/useAuthStore'
+import useTaskStore from '@/store/useTaskStore'
 import { formatTime, cn } from '@/utils/helpers'
 import Chip from '@/components/ui/Chip'
 import Progress from '@/components/ui/Progress'
@@ -29,8 +32,23 @@ const templateChipVariant: Record<string, 'purple' | 'cyan' | 'default'> = {
   style: 'default',
 }
 
+interface AssetItem {
+  id: string
+  userId: string
+  type: string
+  fileUrl: string
+  thumbnailUrl: string
+  taskId: string
+  prompt: string
+  params: Record<string, unknown>
+  favorited: boolean
+  fileSize: number
+  createdAt: number
+}
+
 interface TemplateItem {
   id: string
+  userId: string
   name: string
   description: string
   type: 'prompt' | 'params' | 'style'
@@ -38,7 +56,16 @@ interface TemplateItem {
   createdAt: number
 }
 
-function AssetCard({ asset, selected, onToggleSelect, batchMode }: { asset: typeof mockAssets[number]; selected?: boolean; onToggleSelect?: (id: string) => void; batchMode?: boolean }) {
+function AssetCard({ asset, selected, onToggleSelect, batchMode, onFavorite, onDownload, onReuse, onVideo }: {
+  asset: AssetItem
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
+  batchMode?: boolean
+  onFavorite: (asset: AssetItem) => void
+  onDownload: (asset: AssetItem) => void
+  onReuse: (asset: AssetItem) => void
+  onVideo: (asset: AssetItem) => void
+}) {
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -72,28 +99,25 @@ function AssetCard({ asset, selected, onToggleSelect, batchMode }: { asset: type
       {!batchMode && hovered && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 animate-fade-in">
           <button
-            onClick={() => showToast('success', asset.favorited ? '已取消收藏' : '已收藏')}
+            onClick={() => onFavorite(asset)}
             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <Heart className={cn('w-3.5 h-3.5', asset.favorited ? 'fill-agnes-error text-agnes-error' : 'text-white')} />
           </button>
           <button
-            onClick={() => showToast('info', '开始下载')}
+            onClick={() => onDownload(asset)}
             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <Download className="w-3.5 h-3.5 text-white" />
           </button>
           <button
-            onClick={() => showToast('info', '已复用至创作区')}
+            onClick={() => onReuse(asset)}
             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5 text-white" />
           </button>
           <button
-            onClick={() => {
-              useAppStore.getState().setCurrentMode('text-to-video')
-              showToast('success', '已切换到视频模式')
-            }}
+            onClick={() => onVideo(asset)}
             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
             <Video className="w-3.5 h-3.5 text-white" />
@@ -119,10 +143,17 @@ function EmptyFavorites() {
 }
 
 export default function AssetPanel() {
+  const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const createTask = useTaskStore((s) => s.createTask)
+
   const [activeTab, setActiveTab] = useState<TabKey>('recent')
   const [batchMode, setBatchMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [customTemplates, setCustomTemplates] = useState<TemplateItem[]>(mockTemplates as unknown as TemplateItem[])
+  const [assets, setAssets] = useState<AssetItem[]>([])
+  const [assetsLoading, setAssetsLoading] = useState(false)
+  const [customTemplates, setCustomTemplates] = useState<TemplateItem[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
   const [showAddTemplate, setShowAddTemplate] = useState(false)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [newTplName, setNewTplName] = useState('')
@@ -131,10 +162,71 @@ export default function AssetPanel() {
   const [showUpgradeCard, setShowUpgradeCard] = useState(false)
   const [showManagePanel, setShowManagePanel] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [storageUsed, setStorageUsed] = useState(0)
+  const [storageLimit, setStorageLimit] = useState(1)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const recentAssets = mockAssets.slice(0, 8)
-  const favoriteAssets = mockAssets.filter((a) => a.favorited)
-  const materialAssets = mockAssets.slice(6)
+  // Load assets on mount
+  const loadAssets = useCallback(async () => {
+    setAssetsLoading(true)
+    try {
+      const res = await api.getAssets()
+      if (res.data) {
+        setAssets(res.data)
+      } else {
+        showToast('error', res.error || '加载资产失败')
+      }
+    } catch {
+      showToast('error', '加载资产失败')
+    } finally {
+      setAssetsLoading(false)
+    }
+  }, [])
+
+  // Load templates on mount
+  const loadTemplates = useCallback(async () => {
+    setTemplatesLoading(true)
+    try {
+      const res = await api.getTemplates()
+      if (res.data) {
+        setCustomTemplates(res.data)
+      } else {
+        showToast('error', res.error || '加载模板失败')
+      }
+    } catch {
+      showToast('error', '加载模板失败')
+    } finally {
+      setTemplatesLoading(false)
+    }
+  }, [])
+
+  // Load storage info
+  const loadStorage = useCallback(async () => {
+    try {
+      const res = await api.getStorage()
+      if (res.data) {
+        setStorageUsed(res.data.used ?? 0)
+        setStorageLimit(res.data.limit ?? 1)
+      }
+    } catch {
+      // silently fail for storage
+    }
+  }, [])
+
+  useEffect(() => {
+    loadAssets()
+    loadTemplates()
+    loadStorage()
+  }, [loadAssets, loadTemplates, loadStorage])
+
+  // Derive filtered lists from loaded assets
+  const recentAssets = assets.slice(0, 8)
+  const favoriteAssets = assets.filter((a) => a.favorited)
+  const materialAssets = assets.slice(6)
+
+  // Use auth store user data for storage if available
+  const displayStorageUsed = user?.storageUsed ?? storageUsed
+  const displayStorageLimit = user?.storageLimit ?? storageLimit
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -145,18 +237,112 @@ export default function AssetPanel() {
     })
   }
 
-  const handleBatchAction = (action: string) => {
+  // AssetCard action handlers
+  const handleFavorite = async (asset: AssetItem) => {
+    try {
+      const res = await api.toggleFavorite(asset.id)
+      if (res.data) {
+        setAssets((prev) =>
+          prev.map((a) => a.id === asset.id ? { ...a, favorited: !a.favorited } : a)
+        )
+        showToast('success', asset.favorited ? '已取消收藏' : '已收藏')
+      } else {
+        showToast('error', res.error || '操作失败')
+      }
+    } catch {
+      showToast('error', '收藏操作失败')
+    }
+  }
+
+  const handleDownload = (asset: AssetItem) => {
+    if (asset.fileUrl) {
+      window.open(asset.fileUrl, '_blank')
+      showToast('info', '开始下载')
+    } else {
+      showToast('error', '文件地址不可用')
+    }
+  }
+
+  const handleReuse = (asset: AssetItem) => {
+    const prompt = asset.prompt || ''
+    if (prompt) {
+      createTask({
+        type: asset.type === 'video' ? 'video' : 'image',
+        prompt,
+        negativePrompt: '',
+        params: asset.params || {},
+      })
+      showToast('success', '已复用至创作区')
+    } else {
+      showToast('warning', '该资产无提示词信息')
+    }
+  }
+
+  const handleVideo = async (asset: AssetItem) => {
+    try {
+      const res = await api.generateVideo({
+        prompt: asset.prompt || '',
+        params: asset.params,
+      })
+      if (res.data) {
+        createTask({
+          type: 'video',
+          prompt: asset.prompt || '',
+          negativePrompt: '',
+          params: asset.params || {},
+        })
+        useAppStore.getState().setCurrentMode('text-to-video')
+        showToast('success', '视频生成任务已创建')
+      } else {
+        showToast('error', res.error || '视频生成失败')
+      }
+    } catch {
+      showToast('error', '视频生成请求失败')
+    }
+  }
+
+  const handleBatchAction = async (action: string) => {
     const count = selectedIds.size
+    if (count === 0) return
+
     switch (action) {
-      case 'download':
+      case 'download': {
+        const selectedAssets = assets.filter((a) => selectedIds.has(a.id))
+        selectedAssets.forEach((a) => {
+          if (a.fileUrl) window.open(a.fileUrl, '_blank')
+        })
         showToast('success', `开始下载 ${count} 个文件`)
         break
-      case 'video':
-        showToast('success', `已将 ${count} 个文件转为视频任务`)
+      }
+      case 'video': {
+        const selectedAssets = assets.filter((a) => selectedIds.has(a.id))
+        let successCount = 0
+        for (const a of selectedAssets) {
+          try {
+            const res = await api.generateVideo({ prompt: a.prompt || '', params: a.params })
+            if (res.data) successCount++
+          } catch { /* skip failed */ }
+        }
+        showToast('success', `已将 ${successCount} 个文件转为视频任务`)
         break
-      case 'favorite':
-        showToast('success', `已收藏 ${count} 个文件`)
+      }
+      case 'favorite': {
+        const selectedAssets = assets.filter((a) => selectedIds.has(a.id))
+        let favCount = 0
+        for (const a of selectedAssets) {
+          try {
+            const res = await api.toggleFavorite(a.id)
+            if (res.data) {
+              favCount++
+              setAssets((prev) =>
+                prev.map((item) => item.id === a.id ? { ...item, favorited: !item.favorited } : item)
+              )
+            }
+          } catch { /* skip failed */ }
+        }
+        showToast('success', `已收藏 ${favCount} 个文件`)
         break
+      }
       case 'cancel':
         setSelectedIds(new Set())
         setBatchMode(false)
@@ -164,28 +350,43 @@ export default function AssetPanel() {
     }
   }
 
-  const handleAddTemplate = () => {
+  const handleAddTemplate = async () => {
     if (!newTplName.trim()) { showToast('warning', '请输入模板名称'); return }
     if (customTemplates.length >= 100) { showToast('warning', '已达到模板上限（100个）'); return }
-    const newTpl: TemplateItem = {
-      id: `tpl_${Date.now()}`,
-      name: newTplName,
-      description: newTplPrompt.slice(0, 80),
-      type: newTplType,
-      content: { title: newTplName, prompt: newTplPrompt },
-      createdAt: Date.now(),
+    try {
+      const res = await api.createTemplate({
+        name: newTplName,
+        description: newTplPrompt.slice(0, 80),
+        type: newTplType,
+        content: { title: newTplName, prompt: newTplPrompt },
+      })
+      if (res.data) {
+        setCustomTemplates((prev) => [...prev, res.data])
+        setNewTplName('')
+        setNewTplPrompt('')
+        setNewTplType('prompt')
+        setShowAddTemplate(false)
+        showToast('success', '模板已添加')
+      } else {
+        showToast('error', res.error || '添加模板失败')
+      }
+    } catch {
+      showToast('error', '添加模板请求失败')
     }
-    setCustomTemplates((prev) => [...prev, newTpl])
-    setNewTplName('')
-    setNewTplPrompt('')
-    setNewTplType('prompt')
-    setShowAddTemplate(false)
-    showToast('success', '模板已添加')
   }
 
-  const handleDeleteTemplate = (id: string) => {
-    setCustomTemplates((prev) => prev.filter((t) => t.id !== id))
-    showToast('success', '模板已删除')
+  const handleDeleteTemplate = async (id: string) => {
+    try {
+      const res = await api.deleteTemplate(id)
+      if (res.data || !res.error) {
+        setCustomTemplates((prev) => prev.filter((t) => t.id !== id))
+        showToast('success', '模板已删除')
+      } else {
+        showToast('error', res.error || '删除模板失败')
+      }
+    } catch {
+      showToast('error', '删除模板请求失败')
+    }
   }
 
   const handleEditTemplate = (tpl: TemplateItem) => {
@@ -195,20 +396,34 @@ export default function AssetPanel() {
     setNewTplType(tpl.type)
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingTemplateId || !newTplName.trim()) return
-    setCustomTemplates((prev) =>
-      prev.map((t) =>
-        t.id === editingTemplateId
-          ? { ...t, name: newTplName, description: newTplPrompt.slice(0, 80), type: newTplType, content: { title: newTplName, prompt: newTplPrompt } }
-          : t
-      )
-    )
-    setEditingTemplateId(null)
-    setNewTplName('')
-    setNewTplPrompt('')
-    setNewTplType('prompt')
-    showToast('success', '模板已更新')
+    try {
+      const res = await api.updateTemplate(editingTemplateId, {
+        name: newTplName,
+        description: newTplPrompt.slice(0, 80),
+        type: newTplType,
+        content: { title: newTplName, prompt: newTplPrompt },
+      })
+      if (res.data || !res.error) {
+        setCustomTemplates((prev) =>
+          prev.map((t) =>
+            t.id === editingTemplateId
+              ? { ...t, name: newTplName, description: newTplPrompt.slice(0, 80), type: newTplType, content: { title: newTplName, prompt: newTplPrompt } }
+              : t
+          )
+        )
+        setEditingTemplateId(null)
+        setNewTplName('')
+        setNewTplPrompt('')
+        setNewTplType('prompt')
+        showToast('success', '模板已更新')
+      } else {
+        showToast('error', res.error || '更新模板失败')
+      }
+    } catch {
+      showToast('error', '更新模板请求失败')
+    }
   }
 
   const handleCancelEdit = () => {
@@ -218,6 +433,54 @@ export default function AssetPanel() {
     setNewTplType('prompt')
     setShowAddTemplate(false)
   }
+
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    for (const file of Array.from(files)) {
+      try {
+        const res = await api.uploadFile(file)
+        if (res.data || !res.error) {
+          showToast('success', `已上传: ${file.name}`)
+        } else {
+          showToast('error', res.error || `上传失败: ${file.name}`)
+        }
+      } catch {
+        showToast('error', `上传失败: ${file.name}`)
+      }
+    }
+    // Reload assets after upload
+    loadAssets()
+    loadStorage()
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleClearData = async () => {
+    setShowClearConfirm(false)
+    try {
+      const allIds = assets.map((a) => a.id)
+      if (allIds.length === 0) {
+        showToast('info', '没有数据需要清空')
+        return
+      }
+      const res = await api.batchDeleteAssets(allIds)
+      if (res.data || !res.error) {
+        setAssets([])
+        setSelectedIds(new Set())
+        showToast('success', '缓存数据已清空')
+        loadStorage()
+      } else {
+        showToast('error', res.error || '清空数据失败')
+      }
+    } catch {
+      showToast('error', '清空数据请求失败')
+    }
+  }
+
+  const storageRatio = displayStorageLimit > 0 ? displayStorageUsed / displayStorageLimit : 0
+  const storageUsedGB = (displayStorageUsed / (1024 * 1024 * 1024)).toFixed(1)
+  const storageLimitGB = (displayStorageLimit / (1024 * 1024 * 1024)).toFixed(0)
 
   return (
     <div className="w-[280px] h-full bg-agnes-bg-secondary border-l border-agnes-border flex flex-col overflow-hidden">
@@ -256,10 +519,14 @@ export default function AssetPanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 relative">
+        {assetsLoading && assets.length === 0 && (
+          <div className="flex items-center justify-center py-12 text-agnes-text-muted text-xs">加载中...</div>
+        )}
+
         {activeTab === 'recent' && (
           <div className="grid grid-cols-2 gap-2">
             {recentAssets.map((asset) => (
-              <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} />
+              <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} onFavorite={handleFavorite} onDownload={handleDownload} onReuse={handleReuse} onVideo={handleVideo} />
             ))}
           </div>
         )}
@@ -268,7 +535,7 @@ export default function AssetPanel() {
           favoriteAssets.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               {favoriteAssets.map((asset) => (
-                <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} />
+                <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} onFavorite={handleFavorite} onDownload={handleDownload} onReuse={handleReuse} onVideo={handleVideo} />
               ))}
             </div>
           ) : (
@@ -278,13 +545,21 @@ export default function AssetPanel() {
 
         {activeTab === 'materials' && (
           <div>
-            <Button variant="secondary" size="sm" className="w-full mb-3 gap-1.5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              multiple
+              accept="image/*,video/*"
+              onChange={handleUploadFile}
+            />
+            <Button variant="secondary" size="sm" className="w-full mb-3 gap-1.5" onClick={() => fileInputRef.current?.click()}>
               <Upload className="w-3.5 h-3.5" />
               上传素材
             </Button>
             <div className="grid grid-cols-2 gap-2">
               {materialAssets.map((asset) => (
-                <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} />
+                <AssetCard key={asset.id} asset={asset} batchMode={batchMode} selected={selectedIds.has(asset.id)} onToggleSelect={toggleSelect} onFavorite={handleFavorite} onDownload={handleDownload} onReuse={handleReuse} onVideo={handleVideo} />
               ))}
             </div>
           </div>
@@ -306,6 +581,10 @@ export default function AssetPanel() {
                 <span className="text-[10px] text-agnes-warning">即将达到上限（100）</span>
               )}
             </div>
+
+            {templatesLoading && customTemplates.length === 0 && (
+              <div className="text-xs text-agnes-text-muted text-center py-6">加载中...</div>
+            )}
 
             {(showAddTemplate || editingTemplateId) && (
               <div className="p-3 rounded-card bg-agnes-card border border-agnes-border space-y-2">
@@ -366,7 +645,20 @@ export default function AssetPanel() {
                         variant="primary"
                         size="sm"
                         className="flex-1"
-                        onClick={() => showToast('success', `已应用模板「${tpl.name}」`)}
+                        onClick={() => {
+                          const templateData: Record<string, any> = {}
+                          if (tpl.type === 'prompt') {
+                            templateData.prompt = (tpl.content as any)?.prompt || ''
+                            templateData.negativePrompt = (tpl.content as any)?.negativePrompt || ''
+                          } else if (tpl.type === 'params') {
+                            templateData.params = tpl.content
+                          } else if (tpl.type === 'style') {
+                            templateData.style = (tpl.content as any)?.style || ''
+                            templateData.params = { creativity: (tpl.content as any)?.creativity, detail: (tpl.content as any)?.detail }
+                          }
+                          useAppStore.getState().applyTemplate(templateData)
+                          showToast('success', `已应用模板「${tpl.name}」`)
+                        }}
                       >
                         应用
                       </Button>
@@ -430,7 +722,7 @@ export default function AssetPanel() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setShowUpgradeCard(!showUpgradeCard)}
+              onClick={() => navigate('/membership')}
               className="text-xs text-agnes-cyan hover:text-agnes-purple transition-colors flex items-center gap-0.5"
             >
               <Crown className="w-3 h-3" />升级会员
@@ -438,8 +730,8 @@ export default function AssetPanel() {
             <button onClick={() => setShowManagePanel(!showManagePanel)} className="text-xs text-agnes-purple hover:text-agnes-cyan transition-colors">管理</button>
           </div>
         </div>
-        <Progress value={0.3} max={1} size="md" />
-        <p className="text-[11px] text-agnes-text-muted mt-1.5">0.3 GB / 1 GB</p>
+        <Progress value={storageRatio} max={1} size="md" />
+        <p className="text-[11px] text-agnes-text-muted mt-1.5">{storageUsedGB} GB / {storageLimitGB} GB</p>
 
         {showUpgradeCard && (
           <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 glass rounded-xl p-3 shadow-xl animate-fade-in z-30">
@@ -461,7 +753,7 @@ export default function AssetPanel() {
                 <span className="font-medium text-agnes-text-primary">200 GB 存储</span>
               </div>
             </div>
-            <Button variant="primary" size="sm" className="w-full mt-2.5 gap-1.5" onClick={() => showToast('info', '升级功能开发中')}>
+            <Button variant="primary" size="sm" className="w-full mt-2.5 gap-1.5" onClick={() => navigate('/membership')}>
               <Crown className="w-3.5 h-3.5" />立即升级
             </Button>
           </div>
@@ -471,9 +763,9 @@ export default function AssetPanel() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-agnes-text-secondary">存储使用详情</span>
-                <span className="text-agnes-text-muted">0.3 GB / 1 GB</span>
+                <span className="text-agnes-text-muted">{storageUsedGB} GB / {storageLimitGB} GB</span>
               </div>
-              <Progress value={0.3} max={1} size="sm" />
+              <Progress value={storageRatio} max={1} size="sm" />
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" className="flex-1 text-[11px]" onClick={() => showToast('info', '数据迁移功能开发中')}>
@@ -486,15 +778,15 @@ export default function AssetPanel() {
             <div className="space-y-1.5">
               <p className="text-xs font-medium text-agnes-text-secondary">升级空间</p>
               <div className="grid grid-cols-3 gap-1.5">
-                <button onClick={() => showToast('info', '升级功能即将开放')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                <button onClick={() => navigate('/membership')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
                   10 GB
                   <span className="block text-agnes-text-muted">¥19.9/月</span>
                 </button>
-                <button onClick={() => showToast('info', '升级功能即将开放')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                <button onClick={() => navigate('/membership')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
                   20 GB
                   <span className="block text-agnes-text-muted">¥29.9/月</span>
                 </button>
-                <button onClick={() => showToast('info', '升级功能即将开放')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
+                <button onClick={() => navigate('/membership')} className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-agnes-purple/10 border border-agnes-border text-[10px] text-agnes-text-primary transition-colors">
                   50 GB
                   <span className="block text-agnes-text-muted">¥49.9/月</span>
                 </button>
@@ -509,7 +801,7 @@ export default function AssetPanel() {
               <p className="text-sm text-agnes-text-primary mb-5">确定要清空所有本地缓存数据吗？此操作不可恢复</p>
               <div className="flex gap-3 justify-end">
                 <Button variant="secondary" size="sm" onClick={() => setShowClearConfirm(false)}>取消</Button>
-                <Button variant="danger" size="sm" onClick={() => { setShowClearConfirm(false); showToast('success', '缓存数据已清空') }}>确认</Button>
+                <Button variant="danger" size="sm" onClick={handleClearData}>确认</Button>
               </div>
             </div>
           </div>

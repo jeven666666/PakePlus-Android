@@ -29,6 +29,8 @@ import {
 import useAppStore from '@/store/useAppStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import useModelStore from '@/store/useModelStore'
+import { useNotificationStore } from '@/store/useNotificationStore'
+import NotificationPanel from '@/components/notification/NotificationPanel'
 
 const MODE_TABS = [
   { mode: 'text-to-image' as const, label: '文生图', icon: Image },
@@ -52,10 +54,15 @@ export default function TopBar() {
   const setCurrentModel = useModelStore((s) => s.setCurrentModel)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const unreadCount = useNotificationStore((s) => s.unreadCount)
 
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifPos, setNotifPos] = useState({ top: 0, right: 0 })
+  const notifRef = useRef<HTMLButtonElement>(null)
 
   const [apiStatus, setApiStatus] = useState<'connected' | 'disconnected' | 'testing'>('connected')
 
@@ -195,11 +202,23 @@ export default function TopBar() {
         </div>
 
         <button
+          ref={notifRef}
+          onClick={() => {
+            if (!notifOpen && notifRef.current) {
+              const rect = notifRef.current.getBoundingClientRect()
+              setNotifPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+            }
+            setNotifOpen(!notifOpen)
+          }}
           aria-label="通知"
           className="relative w-8 h-8 flex items-center justify-center rounded-input text-agnes-text-secondary hover:text-agnes-text-primary hover:bg-white/5 transition-colors"
         >
           <Bell size={16} />
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-agnes-error" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-agnes-error text-[10px] font-medium text-white px-1">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
 
         <Link
@@ -274,6 +293,15 @@ export default function TopBar() {
             document.body
           )}
         </div>
+
+        {notifOpen && createPortal(
+          <NotificationPanel
+            top={notifPos.top}
+            right={notifPos.right}
+            onClose={() => setNotifOpen(false)}
+          />,
+          document.body
+        )}
       </div>
     </header>
   )
